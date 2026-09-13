@@ -5,9 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "build": "npm run build:api && vue-tsc -b && vite build",
     "build:api": "esbuild api/_handler.ts --bundle --platform=node --target=node20 --format=cjs --outfile=api/index.cjs",
-    "vercel-build": "npm run build:api && npm run build",
     "preview": "vite preview",
     "test:eta": "node --test tests/etaPredictor.test.mjs",
     "test:history": "node --test tests/historyStore.test.mjs",

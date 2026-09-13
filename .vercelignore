@@ -1,0 +1,8 @@
+node_modules
+dist
+dist-ssr
+dist-no-token
+artifacts
+.git
+.atlasops-cache
+.atlasops-data
