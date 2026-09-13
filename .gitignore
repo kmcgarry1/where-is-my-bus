@@ -16,6 +16,8 @@ dist-ssr
 .env.*
 !.env.example
 *.local
+api/\[...path\].js
+.vercel
 
 # Editor directories and files
 .vscode/*
@@ -27,3 +29,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+.env*
