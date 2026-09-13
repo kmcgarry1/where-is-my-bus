@@ -1,14 +1,8 @@
 {
   "builds": [
     { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } },
-    { "src": "api/index.cjs", "use": "@vercel/node" }
+    { "src": "api/index.cjs", "use": "@vercel/node", "config": { "maxLambdaSize": "50mb" } }
   ],
-  "functions": {
-    "api/index.cjs": {
-      "memory": 3009,
-      "maxDuration": 60
-    }
-  },
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/index.cjs" },
     { "handle": "filesystem" },
