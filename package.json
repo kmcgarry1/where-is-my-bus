@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "build:api": "esbuild api/_handler.ts --bundle --platform=node --target=node20 --format=esm --outfile=\"api/[...path].js\"",
+    "build:api": "esbuild api/_handler.ts --bundle --platform=node --target=node20 --format=esm --outfile=api/index.js",
     "vercel-build": "npm run build:api && npm run build",
     "preview": "vite preview",
     "test:eta": "node --test tests/etaPredictor.test.mjs",
