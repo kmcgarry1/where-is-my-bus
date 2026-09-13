@@ -4,13 +4,7 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-}) : x)(function(x) {
-  if (typeof require !== "undefined") return require.apply(this, arguments);
-  throw Error('Dynamic require of "' + x + '" is not supported');
-});
-var __commonJS = (cb, mod) => function __require2() {
+var __commonJS = (cb, mod) => function __require() {
   try {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   } catch (e) {
@@ -37,12 +31,13 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // node_modules/protobufjs/src/util/aspromise.js
 var require_aspromise = __commonJS({
-  "node_modules/protobufjs/src/util/aspromise.js"(exports, module) {
+  "node_modules/protobufjs/src/util/aspromise.js"(exports2, module2) {
     "use strict";
-    module.exports = asPromise;
+    module2.exports = asPromise;
     function asPromise(fn, ctx) {
       var params = new Array(arguments.length - 1), offset = 0, index = 2, pending = true;
       while (index < arguments.length)
@@ -76,9 +71,9 @@ var require_aspromise = __commonJS({
 
 // node_modules/protobufjs/src/util/base64.js
 var require_base64 = __commonJS({
-  "node_modules/protobufjs/src/util/base64.js"(exports) {
+  "node_modules/protobufjs/src/util/base64.js"(exports2) {
     "use strict";
-    var base643 = exports;
+    var base643 = exports2;
     base643.length = function length(string4) {
       var p = string4.length;
       if (!p)
@@ -180,9 +175,9 @@ var require_base64 = __commonJS({
 
 // node_modules/protobufjs/src/util/eventemitter.js
 var require_eventemitter = __commonJS({
-  "node_modules/protobufjs/src/util/eventemitter.js"(exports, module) {
+  "node_modules/protobufjs/src/util/eventemitter.js"(exports2, module2) {
     "use strict";
-    module.exports = EventEmitter;
+    module2.exports = EventEmitter;
     function EventEmitter() {
       this._listeners = /* @__PURE__ */ Object.create(null);
     }
@@ -228,10 +223,10 @@ var require_eventemitter = __commonJS({
 
 // node_modules/protobufjs/src/util/float.js
 var require_float = __commonJS({
-  "node_modules/protobufjs/src/util/float.js"(exports, module) {
+  "node_modules/protobufjs/src/util/float.js"(exports2, module2) {
     "use strict";
-    module.exports = factory(factory);
-    function factory(exports2) {
+    module2.exports = factory(factory);
+    function factory(exports3) {
       if (typeof Float32Array !== "undefined") (function() {
         var f32 = new Float32Array([-0]), f8b = new Uint8Array(f32.buffer), le = f8b[3] === 128;
         function writeFloat_f32_cpy(val, buf, pos) {
@@ -248,8 +243,8 @@ var require_float = __commonJS({
           buf[pos + 2] = f8b[1];
           buf[pos + 3] = f8b[0];
         }
-        exports2.writeFloatLE = le ? writeFloat_f32_cpy : writeFloat_f32_rev;
-        exports2.writeFloatBE = le ? writeFloat_f32_rev : writeFloat_f32_cpy;
+        exports3.writeFloatLE = le ? writeFloat_f32_cpy : writeFloat_f32_rev;
+        exports3.writeFloatBE = le ? writeFloat_f32_rev : writeFloat_f32_cpy;
         function readFloat_f32_cpy(buf, pos) {
           f8b[0] = buf[pos];
           f8b[1] = buf[pos + 1];
@@ -264,8 +259,8 @@ var require_float = __commonJS({
           f8b[0] = buf[pos + 3];
           return f32[0];
         }
-        exports2.readFloatLE = le ? readFloat_f32_cpy : readFloat_f32_rev;
-        exports2.readFloatBE = le ? readFloat_f32_rev : readFloat_f32_cpy;
+        exports3.readFloatLE = le ? readFloat_f32_cpy : readFloat_f32_rev;
+        exports3.readFloatBE = le ? readFloat_f32_rev : readFloat_f32_cpy;
       })();
       else (function() {
         function writeFloat_ieee754(writeUint, val, buf, pos) {
@@ -291,14 +286,14 @@ var require_float = __commonJS({
             writeUint((sign << 31 | exponent + 127 << 23 | mantissa) >>> 0, buf, pos);
           }
         }
-        exports2.writeFloatLE = writeFloat_ieee754.bind(null, writeUintLE);
-        exports2.writeFloatBE = writeFloat_ieee754.bind(null, writeUintBE);
+        exports3.writeFloatLE = writeFloat_ieee754.bind(null, writeUintLE);
+        exports3.writeFloatBE = writeFloat_ieee754.bind(null, writeUintBE);
         function readFloat_ieee754(readUint, buf, pos) {
           var uint = readUint(buf, pos), sign = (uint >> 31) * 2 + 1, exponent = uint >>> 23 & 255, mantissa = uint & 8388607;
           return exponent === 255 ? mantissa ? NaN : sign * Infinity : exponent === 0 ? sign * 1401298464324817e-60 * mantissa : sign * Math.pow(2, exponent - 150) * (mantissa + 8388608);
         }
-        exports2.readFloatLE = readFloat_ieee754.bind(null, readUintLE);
-        exports2.readFloatBE = readFloat_ieee754.bind(null, readUintBE);
+        exports3.readFloatLE = readFloat_ieee754.bind(null, readUintLE);
+        exports3.readFloatBE = readFloat_ieee754.bind(null, readUintBE);
       })();
       if (typeof Float64Array !== "undefined") (function() {
         var f64 = new Float64Array([-0]), f8b = new Uint8Array(f64.buffer), le = f8b[7] === 128;
@@ -324,8 +319,8 @@ var require_float = __commonJS({
           buf[pos + 6] = f8b[1];
           buf[pos + 7] = f8b[0];
         }
-        exports2.writeDoubleLE = le ? writeDouble_f64_cpy : writeDouble_f64_rev;
-        exports2.writeDoubleBE = le ? writeDouble_f64_rev : writeDouble_f64_cpy;
+        exports3.writeDoubleLE = le ? writeDouble_f64_cpy : writeDouble_f64_rev;
+        exports3.writeDoubleBE = le ? writeDouble_f64_rev : writeDouble_f64_cpy;
         function readDouble_f64_cpy(buf, pos) {
           f8b[0] = buf[pos];
           f8b[1] = buf[pos + 1];
@@ -348,8 +343,8 @@ var require_float = __commonJS({
           f8b[0] = buf[pos + 7];
           return f64[0];
         }
-        exports2.readDoubleLE = le ? readDouble_f64_cpy : readDouble_f64_rev;
-        exports2.readDoubleBE = le ? readDouble_f64_rev : readDouble_f64_cpy;
+        exports3.readDoubleLE = le ? readDouble_f64_cpy : readDouble_f64_rev;
+        exports3.readDoubleBE = le ? readDouble_f64_rev : readDouble_f64_cpy;
       })();
       else (function() {
         function writeDouble_ieee754(writeUint, off0, off1, val, buf, pos) {
@@ -387,17 +382,17 @@ var require_float = __commonJS({
             }
           }
         }
-        exports2.writeDoubleLE = writeDouble_ieee754.bind(null, writeUintLE, 0, 4);
-        exports2.writeDoubleBE = writeDouble_ieee754.bind(null, writeUintBE, 4, 0);
+        exports3.writeDoubleLE = writeDouble_ieee754.bind(null, writeUintLE, 0, 4);
+        exports3.writeDoubleBE = writeDouble_ieee754.bind(null, writeUintBE, 4, 0);
         function readDouble_ieee754(readUint, off0, off1, buf, pos) {
           var lo = readUint(buf, pos + off0), hi = readUint(buf, pos + off1);
           var sign = (hi >> 31) * 2 + 1, exponent = hi >>> 20 & 2047, mantissa = 4294967296 * (hi & 1048575) + lo;
           return exponent === 2047 ? mantissa ? NaN : sign * Infinity : exponent === 0 ? sign * 5e-324 * mantissa : sign * Math.pow(2, exponent - 1075) * (mantissa + 4503599627370496);
         }
-        exports2.readDoubleLE = readDouble_ieee754.bind(null, readUintLE, 0, 4);
-        exports2.readDoubleBE = readDouble_ieee754.bind(null, readUintBE, 4, 0);
+        exports3.readDoubleLE = readDouble_ieee754.bind(null, readUintLE, 0, 4);
+        exports3.readDoubleBE = readDouble_ieee754.bind(null, readUintBE, 4, 0);
       })();
-      return exports2;
+      return exports3;
     }
     function writeUintLE(val, buf, pos) {
       buf[pos] = val & 255;
@@ -422,9 +417,9 @@ var require_float = __commonJS({
 
 // node_modules/protobufjs/src/util/utf8.js
 var require_utf8 = __commonJS({
-  "node_modules/protobufjs/src/util/utf8.js"(exports) {
+  "node_modules/protobufjs/src/util/utf8.js"(exports2) {
     "use strict";
-    var utf8 = exports;
+    var utf8 = exports2;
     var looseDecoder = new TextDecoder("utf-8", { ignoreBOM: true });
     var strictDecoder;
     var TEXT_DECODER_MIN_LENGTH = 64;
@@ -536,9 +531,9 @@ var require_utf8 = __commonJS({
 
 // node_modules/protobufjs/src/util/pool.js
 var require_pool = __commonJS({
-  "node_modules/protobufjs/src/util/pool.js"(exports, module) {
+  "node_modules/protobufjs/src/util/pool.js"(exports2, module2) {
     "use strict";
-    module.exports = pool;
+    module2.exports = pool;
     function pool(alloc, slice, size) {
       var SIZE = size || 8192;
       var MAX = SIZE >>> 1;
@@ -562,9 +557,9 @@ var require_pool = __commonJS({
 
 // node_modules/protobufjs/src/util/longbits.js
 var require_longbits = __commonJS({
-  "node_modules/protobufjs/src/util/longbits.js"(exports, module) {
+  "node_modules/protobufjs/src/util/longbits.js"(exports2, module2) {
     "use strict";
-    module.exports = LongBits;
+    module2.exports = LongBits;
     var Long;
     function LongBits(lo, hi) {
       this.lo = lo >>> 0;
@@ -667,29 +662,29 @@ var require_longbits = __commonJS({
 
 // node_modules/long/umd/index.js
 var require_umd = __commonJS({
-  "node_modules/long/umd/index.js"(exports, module) {
+  "node_modules/long/umd/index.js"(exports2, module2) {
     (function(global2, factory) {
-      function preferDefault(exports2) {
-        return exports2.default || exports2;
+      function preferDefault(exports3) {
+        return exports3.default || exports3;
       }
       if (typeof define === "function" && define.amd) {
         define([], function() {
-          var exports2 = {};
-          factory(exports2);
-          return preferDefault(exports2);
+          var exports3 = {};
+          factory(exports3);
+          return preferDefault(exports3);
         });
-      } else if (typeof exports === "object") {
-        factory(exports);
-        if (typeof module === "object") module.exports = preferDefault(exports);
+      } else if (typeof exports2 === "object") {
+        factory(exports2);
+        if (typeof module2 === "object") module2.exports = preferDefault(exports2);
       } else {
         (function() {
-          var exports2 = {};
-          factory(exports2);
-          global2.Long = preferDefault(exports2);
+          var exports3 = {};
+          factory(exports3);
+          global2.Long = preferDefault(exports3);
         })();
       }
     })(
-      typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : exports,
+      typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : exports2,
       function(_exports) {
         "use strict";
         Object.defineProperty(_exports, "__esModule", {
@@ -1645,9 +1640,9 @@ var require_umd = __commonJS({
 
 // node_modules/protobufjs/src/util/minimal.js
 var require_minimal = __commonJS({
-  "node_modules/protobufjs/src/util/minimal.js"(exports) {
+  "node_modules/protobufjs/src/util/minimal.js"(exports2) {
     "use strict";
-    var util = exports;
+    var util = exports2;
     util.asPromise = require_aspromise();
     util.base64 = require_base64();
     util.EventEmitter = require_eventemitter();
@@ -1660,7 +1655,7 @@ var require_minimal = __commonJS({
     }
     util.isUnsafeProperty = isUnsafeProperty;
     util.isNode = Boolean(typeof global !== "undefined" && global && global.process && global.process.versions && global.process.versions.node);
-    util.global = util.isNode && global || typeof window !== "undefined" && window || typeof self !== "undefined" && self || typeof globalThis !== "undefined" && globalThis || exports;
+    util.global = util.isNode && global || typeof window !== "undefined" && window || typeof self !== "undefined" && self || typeof globalThis !== "undefined" && globalThis || exports2;
     util.emptyArray = Object.freeze ? Object.freeze([]) : (
       /* istanbul ignore next */
       []
@@ -1850,9 +1845,9 @@ var require_minimal = __commonJS({
 
 // node_modules/protobufjs/src/writer.js
 var require_writer = __commonJS({
-  "node_modules/protobufjs/src/writer.js"(exports, module) {
+  "node_modules/protobufjs/src/writer.js"(exports2, module2) {
     "use strict";
-    module.exports = Writer;
+    module2.exports = Writer;
     var util = require_minimal();
     var BufferWriter;
     var LongBits = util.LongBits;
@@ -2272,9 +2267,9 @@ var require_writer = __commonJS({
 
 // node_modules/protobufjs/src/writer_buffer.js
 var require_writer_buffer = __commonJS({
-  "node_modules/protobufjs/src/writer_buffer.js"(exports, module) {
+  "node_modules/protobufjs/src/writer_buffer.js"(exports2, module2) {
     "use strict";
-    module.exports = BufferWriter;
+    module2.exports = BufferWriter;
     var Writer = require_writer();
     BufferWriter.prototype = Object.create(Writer.prototype, {
       constructor: {
@@ -2337,9 +2332,9 @@ var require_writer_buffer = __commonJS({
 
 // node_modules/protobufjs/src/reader.js
 var require_reader = __commonJS({
-  "node_modules/protobufjs/src/reader.js"(exports, module) {
+  "node_modules/protobufjs/src/reader.js"(exports2, module2) {
     "use strict";
-    module.exports = Reader;
+    module2.exports = Reader;
     var util = require_minimal();
     var BufferReader;
     var LongBits = util.LongBits;
@@ -2867,9 +2862,9 @@ var require_reader = __commonJS({
 
 // node_modules/protobufjs/src/reader_buffer.js
 var require_reader_buffer = __commonJS({
-  "node_modules/protobufjs/src/reader_buffer.js"(exports, module) {
+  "node_modules/protobufjs/src/reader_buffer.js"(exports2, module2) {
     "use strict";
-    module.exports = BufferReader;
+    module2.exports = BufferReader;
     var Reader = require_reader();
     BufferReader.prototype = Object.create(Reader.prototype, {
       constructor: {
@@ -2903,9 +2898,9 @@ var require_reader_buffer = __commonJS({
 
 // node_modules/protobufjs/src/rpc/service.js
 var require_service = __commonJS({
-  "node_modules/protobufjs/src/rpc/service.js"(exports, module) {
+  "node_modules/protobufjs/src/rpc/service.js"(exports2, module2) {
     "use strict";
-    module.exports = Service;
+    module2.exports = Service;
     var util = require_minimal();
     Service.prototype = Object.create(util.EventEmitter.prototype, {
       constructor: {
@@ -2985,38 +2980,38 @@ var require_service = __commonJS({
 
 // node_modules/protobufjs/src/rpc.js
 var require_rpc = __commonJS({
-  "node_modules/protobufjs/src/rpc.js"(exports) {
+  "node_modules/protobufjs/src/rpc.js"(exports2) {
     "use strict";
-    var rpc = exports;
+    var rpc = exports2;
     rpc.Service = require_service();
   }
 });
 
 // node_modules/protobufjs/src/roots.js
 var require_roots = __commonJS({
-  "node_modules/protobufjs/src/roots.js"(exports, module) {
+  "node_modules/protobufjs/src/roots.js"(exports2, module2) {
     "use strict";
-    module.exports = /* @__PURE__ */ Object.create(null);
+    module2.exports = /* @__PURE__ */ Object.create(null);
   }
 });
 
 // node_modules/protobufjs/src/index-minimal.js
 var require_index_minimal = __commonJS({
-  "node_modules/protobufjs/src/index-minimal.js"(exports) {
+  "node_modules/protobufjs/src/index-minimal.js"(exports2) {
     "use strict";
-    exports.build = "minimal";
-    exports.Writer = require_writer();
-    exports.BufferWriter = require_writer_buffer();
-    exports.Reader = require_reader();
-    exports.BufferReader = require_reader_buffer();
-    exports.util = require_minimal();
-    exports.rpc = require_rpc();
-    exports.roots = require_roots();
-    exports.configure = configure;
+    exports2.build = "minimal";
+    exports2.Writer = require_writer();
+    exports2.BufferWriter = require_writer_buffer();
+    exports2.Reader = require_reader();
+    exports2.BufferReader = require_reader_buffer();
+    exports2.util = require_minimal();
+    exports2.rpc = require_rpc();
+    exports2.roots = require_roots();
+    exports2.configure = configure;
     function configure() {
-      exports.util.LongBits._configure(exports.util.Long);
-      exports.Writer._configure(exports.BufferWriter);
-      exports.Reader._configure(exports.BufferReader);
+      exports2.util.LongBits._configure(exports2.util.Long);
+      exports2.Writer._configure(exports2.BufferWriter);
+      exports2.Reader._configure(exports2.BufferReader);
     }
     configure();
   }
@@ -3024,15 +3019,15 @@ var require_index_minimal = __commonJS({
 
 // node_modules/protobufjs/minimal.js
 var require_minimal2 = __commonJS({
-  "node_modules/protobufjs/minimal.js"(exports, module) {
+  "node_modules/protobufjs/minimal.js"(exports2, module2) {
     "use strict";
-    module.exports = require_index_minimal();
+    module2.exports = require_index_minimal();
   }
 });
 
 // node_modules/gtfs-realtime-bindings/gtfs-realtime.js
 var require_gtfs_realtime = __commonJS({
-  "node_modules/gtfs-realtime-bindings/gtfs-realtime.js"(exports, module) {
+  "node_modules/gtfs-realtime-bindings/gtfs-realtime.js"(exports2, module2) {
     "use strict";
     var $protobuf = require_minimal2();
     var $Reader = $protobuf.Reader;
@@ -9744,14 +9739,14 @@ var require_gtfs_realtime = __commonJS({
       })();
       return transit_realtime2;
     })();
-    module.exports = $root;
+    module2.exports = $root;
   }
 });
 
 // node_modules/adm-zip/util/constants.js
 var require_constants = __commonJS({
-  "node_modules/adm-zip/util/constants.js"(exports, module) {
-    module.exports = {
+  "node_modules/adm-zip/util/constants.js"(exports2, module2) {
+    module2.exports = {
       /* The local file header */
       LOCHDR: 30,
       // LOC header size
@@ -9969,7 +9964,7 @@ var require_constants = __commonJS({
 
 // node_modules/adm-zip/util/errors.js
 var require_errors = __commonJS({
-  "node_modules/adm-zip/util/errors.js"(exports) {
+  "node_modules/adm-zip/util/errors.js"(exports2) {
     var errors = {
       /* Header error messages */
       INVALID_LOC: "Invalid LOC header (bad signature)",
@@ -10022,16 +10017,16 @@ var require_errors = __commonJS({
       };
     }
     for (const msg of Object.keys(errors)) {
-      exports[msg] = E(errors[msg]);
+      exports2[msg] = E(errors[msg]);
     }
   }
 });
 
 // node_modules/adm-zip/util/utils.js
 var require_utils = __commonJS({
-  "node_modules/adm-zip/util/utils.js"(exports, module) {
-    var fsystem = __require("fs");
-    var pth = __require("path");
+  "node_modules/adm-zip/util/utils.js"(exports2, module2) {
+    var fsystem = require("fs");
+    var pth = require("path");
     var Constants = require_constants();
     var Errors = require_errors();
     var isWin = typeof process === "object" && "win32" === process.platform;
@@ -10055,7 +10050,7 @@ var require_utils = __commonJS({
         }
       }
     }
-    module.exports = Utils;
+    module2.exports = Utils;
     Utils.prototype.makeDir = function(folder) {
       const self2 = this;
       function mkdirSync(fpath) {
@@ -10327,9 +10322,9 @@ var require_utils = __commonJS({
 
 // node_modules/adm-zip/util/fattr.js
 var require_fattr = __commonJS({
-  "node_modules/adm-zip/util/fattr.js"(exports, module) {
-    var pth = __require("path");
-    module.exports = function(path, { fs }) {
+  "node_modules/adm-zip/util/fattr.js"(exports2, module2) {
+    var pth = require("path");
+    module2.exports = function(path, { fs }) {
       var _path = path || "", _obj = newAttr(), _stat = null;
       function newAttr() {
         return {
@@ -10396,8 +10391,8 @@ var require_fattr = __commonJS({
 
 // node_modules/adm-zip/util/decoder.js
 var require_decoder = __commonJS({
-  "node_modules/adm-zip/util/decoder.js"(exports, module) {
-    module.exports = {
+  "node_modules/adm-zip/util/decoder.js"(exports2, module2) {
+    module2.exports = {
       efs: true,
       encode: (data) => Buffer.from(data, "utf8"),
       decode: (data) => data.toString("utf8")
@@ -10407,21 +10402,21 @@ var require_decoder = __commonJS({
 
 // node_modules/adm-zip/util/index.js
 var require_util = __commonJS({
-  "node_modules/adm-zip/util/index.js"(exports, module) {
-    module.exports = require_utils();
-    module.exports.Constants = require_constants();
-    module.exports.Errors = require_errors();
-    module.exports.FileAttr = require_fattr();
-    module.exports.decoder = require_decoder();
+  "node_modules/adm-zip/util/index.js"(exports2, module2) {
+    module2.exports = require_utils();
+    module2.exports.Constants = require_constants();
+    module2.exports.Errors = require_errors();
+    module2.exports.FileAttr = require_fattr();
+    module2.exports.decoder = require_decoder();
   }
 });
 
 // node_modules/adm-zip/headers/entryHeader.js
 var require_entryHeader = __commonJS({
-  "node_modules/adm-zip/headers/entryHeader.js"(exports, module) {
+  "node_modules/adm-zip/headers/entryHeader.js"(exports2, module2) {
     var Utils = require_util();
     var Constants = Utils.Constants;
-    module.exports = function() {
+    module2.exports = function() {
       var _verMade = 20, _version = 10, _flags = 0, _method = 0, _time = 0, _crc = 0, _compressedSize = 0, _size2 = 0, _fnameLen = 0, _extraLen = 0, _comLen = 0, _diskStart = 0, _inattr = 0, _attr = 0, _offset = 0;
       _verMade |= Utils.isWin ? 2560 : 768;
       _flags |= Constants.FLG_EFS;
@@ -10689,10 +10684,10 @@ var require_entryHeader = __commonJS({
 
 // node_modules/adm-zip/headers/mainHeader.js
 var require_mainHeader = __commonJS({
-  "node_modules/adm-zip/headers/mainHeader.js"(exports, module) {
+  "node_modules/adm-zip/headers/mainHeader.js"(exports2, module2) {
     var Utils = require_util();
     var Constants = Utils.Constants;
-    module.exports = function() {
+    module2.exports = function() {
       var _volumeEntries = 0, _totalEntries = 0, _size2 = 0, _offset = 0, _commentLength = 0;
       const needsZip64 = () => _volumeEntries > Constants.EF_ZIP64_OR_16 || _totalEntries > Constants.EF_ZIP64_OR_16 || _size2 > Constants.EF_ZIP64_OR_32 || _offset > Constants.EF_ZIP64_OR_32;
       return {
@@ -10813,17 +10808,17 @@ var require_mainHeader = __commonJS({
 
 // node_modules/adm-zip/headers/index.js
 var require_headers = __commonJS({
-  "node_modules/adm-zip/headers/index.js"(exports) {
-    exports.EntryHeader = require_entryHeader();
-    exports.MainHeader = require_mainHeader();
+  "node_modules/adm-zip/headers/index.js"(exports2) {
+    exports2.EntryHeader = require_entryHeader();
+    exports2.MainHeader = require_mainHeader();
   }
 });
 
 // node_modules/adm-zip/methods/deflater.js
 var require_deflater = __commonJS({
-  "node_modules/adm-zip/methods/deflater.js"(exports, module) {
-    module.exports = function(inbuf) {
-      var zlib = __require("zlib");
+  "node_modules/adm-zip/methods/deflater.js"(exports2, module2) {
+    module2.exports = function(inbuf) {
+      var zlib = require("zlib");
       var opts = { chunkSize: (parseInt(inbuf.length / 1024) + 1) * 1024 };
       return {
         deflate: function() {
@@ -10854,10 +10849,10 @@ var require_deflater = __commonJS({
 
 // node_modules/adm-zip/methods/inflater.js
 var require_inflater = __commonJS({
-  "node_modules/adm-zip/methods/inflater.js"(exports, module) {
+  "node_modules/adm-zip/methods/inflater.js"(exports2, module2) {
     var version2 = +(process?.versions?.node ?? "").split(".")[0] || 0;
-    module.exports = function(inbuf, expectedLength) {
-      var zlib = __require("zlib");
+    module2.exports = function(inbuf, expectedLength) {
+      var zlib = require("zlib");
       const option = version2 >= 15 && expectedLength > 0 ? { maxOutputLength: expectedLength } : {};
       return {
         inflate: function() {
@@ -10888,9 +10883,9 @@ var require_inflater = __commonJS({
 
 // node_modules/adm-zip/methods/zipcrypto.js
 var require_zipcrypto = __commonJS({
-  "node_modules/adm-zip/methods/zipcrypto.js"(exports, module) {
+  "node_modules/adm-zip/methods/zipcrypto.js"(exports2, module2) {
     "use strict";
-    var { randomFillSync } = __require("crypto");
+    var { randomFillSync } = require("crypto");
     var Errors = require_errors();
     var crctable = new Uint32Array(256).map((t, crc) => {
       for (let j = 0; j < 8; j++) {
@@ -10998,27 +10993,27 @@ var require_zipcrypto = __commonJS({
       encrypter(salt, result);
       return encrypter(data, result, 12);
     }
-    module.exports = { decrypt, encrypt, _salter };
+    module2.exports = { decrypt, encrypt, _salter };
   }
 });
 
 // node_modules/adm-zip/methods/index.js
 var require_methods = __commonJS({
-  "node_modules/adm-zip/methods/index.js"(exports) {
-    exports.Deflater = require_deflater();
-    exports.Inflater = require_inflater();
-    exports.ZipCrypto = require_zipcrypto();
+  "node_modules/adm-zip/methods/index.js"(exports2) {
+    exports2.Deflater = require_deflater();
+    exports2.Inflater = require_inflater();
+    exports2.ZipCrypto = require_zipcrypto();
   }
 });
 
 // node_modules/adm-zip/zipEntry.js
 var require_zipEntry = __commonJS({
-  "node_modules/adm-zip/zipEntry.js"(exports, module) {
+  "node_modules/adm-zip/zipEntry.js"(exports2, module2) {
     var Utils = require_util();
     var Headers = require_headers();
     var Constants = Utils.Constants;
     var Methods = require_methods();
-    module.exports = function(options, input2) {
+    module2.exports = function(options, input2) {
       var _centralHeader = new Headers.EntryHeader(), _entryName = Buffer.alloc(0), _comment = Buffer.alloc(0), _isDirectory = false, uncompressedData = null, _extra = Buffer.alloc(0), _extralocal = Buffer.alloc(0), _efs = true;
       const opts = options;
       const decoder = typeof opts.decoder === "object" ? opts.decoder : Utils.decoder;
@@ -11316,11 +11311,11 @@ var require_zipEntry = __commonJS({
 
 // node_modules/adm-zip/zipFile.js
 var require_zipFile = __commonJS({
-  "node_modules/adm-zip/zipFile.js"(exports, module) {
+  "node_modules/adm-zip/zipFile.js"(exports2, module2) {
     var ZipEntry = require_zipEntry();
     var Headers = require_headers();
     var Utils = require_util();
-    module.exports = function(inBuffer, options) {
+    module2.exports = function(inBuffer, options) {
       var entryList = [], entryTable = /* @__PURE__ */ Object.create(null), _comment = Buffer.alloc(0), mainHeader = new Headers.MainHeader(), loadedEntries = false;
       var password = null;
       const temporary = /* @__PURE__ */ new Set();
@@ -11662,9 +11657,9 @@ var require_zipFile = __commonJS({
 
 // node_modules/adm-zip/adm-zip.js
 var require_adm_zip = __commonJS({
-  "node_modules/adm-zip/adm-zip.js"(exports, module) {
+  "node_modules/adm-zip/adm-zip.js"(exports2, module2) {
     var Utils = require_util();
-    var pth = __require("path");
+    var pth = require("path");
     var ZipEntry = require_zipEntry();
     var ZipFile = require_zipFile();
     var get_Bool = (...val) => Utils.findLast(val, (c) => typeof c === "boolean");
@@ -11680,7 +11675,7 @@ var require_adm_zip = __commonJS({
       // file system
       fs: null
     };
-    module.exports = function(input2, options) {
+    module2.exports = function(input2, options) {
       let inBuffer = null;
       const opts = Object.assign(/* @__PURE__ */ Object.create(null), defaultOptions);
       if (input2 && "object" === typeof input2) {
@@ -12469,10 +12464,10 @@ var require_adm_zip = __commonJS({
 
 // node_modules/proj4/dist/proj4-src.js
 var require_proj4_src = __commonJS({
-  "node_modules/proj4/dist/proj4-src.js"(exports, module) {
+  "node_modules/proj4/dist/proj4-src.js"(exports2, module2) {
     (function(global2, factory) {
-      typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global2 = typeof globalThis !== "undefined" ? globalThis : global2 || self, global2.proj4 = factory());
-    })(exports, (function() {
+      typeof exports2 === "object" && typeof module2 !== "undefined" ? module2.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global2 = typeof globalThis !== "undefined" ? globalThis : global2 || self, global2.proj4 = factory());
+    })(exports2, (function() {
       "use strict";
       function globals(defs2) {
         defs2("EPSG:4326", "+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees");
@@ -20870,6 +20865,13 @@ var require_proj4_src = __commonJS({
   }
 });
 
+// api/_handler.ts
+var handler_exports = {};
+__export(handler_exports, {
+  default: () => handler
+});
+module.exports = __toCommonJS(handler_exports);
+
 // server/providers/http.ts
 function sendJson(response, status, body) {
   response.statusCode = status;
@@ -20881,8 +20883,8 @@ function readRouteUrl(request) {
 }
 
 // server/transport/historyStore.ts
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+var import_promises = require("node:fs/promises");
+var import_node_path = require("node:path");
 var observationFileName = "vehicle-observations.jsonl";
 var predictionFileName = "eta-predictions.jsonl";
 var stopArrivalFileName = "observed-stop-arrivals.jsonl";
@@ -21101,15 +21103,15 @@ function filterByTimeAndLimit(records, query, predicate, timestamp) {
 function appendJsonl(path, records) {
   if (!records.length) return Promise.resolve();
   writeQueue = writeQueue.then(async () => {
-    await mkdir(dataDirectory(), { recursive: true });
-    await writeFile(path, `${records.map((record2) => JSON.stringify(record2)).join("\n")}
+    await (0, import_promises.mkdir)(dataDirectory(), { recursive: true });
+    await (0, import_promises.writeFile)(path, `${records.map((record2) => JSON.stringify(record2)).join("\n")}
 `, { flag: "a" });
   });
   return writeQueue;
 }
 async function readJsonl(path) {
   try {
-    const text = await readFile(path, "utf8");
+    const text = await (0, import_promises.readFile)(path, "utf8");
     return text.split(/\r?\n/).flatMap((line) => {
       if (!line.trim()) return [];
       try {
@@ -21124,19 +21126,19 @@ async function readJsonl(path) {
   }
 }
 function dataDirectory() {
-  return process.env.ATLASOPS_DATA_DIR?.trim() || join(process.cwd(), ".atlasops-data");
+  return process.env.ATLASOPS_DATA_DIR?.trim() || (0, import_node_path.join)(process.cwd(), ".atlasops-data");
 }
 function observationPath() {
-  return join(dataDirectory(), observationFileName);
+  return (0, import_node_path.join)(dataDirectory(), observationFileName);
 }
 function predictionPath() {
-  return join(dataDirectory(), predictionFileName);
+  return (0, import_node_path.join)(dataDirectory(), predictionFileName);
 }
 function stopArrivalPath() {
-  return join(dataDirectory(), stopArrivalFileName);
+  return (0, import_node_path.join)(dataDirectory(), stopArrivalFileName);
 }
 function journeySegmentPath() {
-  return join(dataDirectory(), journeySegmentFileName);
+  return (0, import_node_path.join)(dataDirectory(), journeySegmentFileName);
 }
 function scheduledArrivalFromDeviation(observedArrival, deviationSeconds) {
   if (deviationSeconds === void 0) return void 0;
@@ -21478,10 +21480,10 @@ async function cached(key, ttlMs4, loader) {
 }
 
 // server/providers/ntaGtfsRealtime/staticGtfs.ts
+var import_node_crypto = require("node:crypto");
+var import_promises2 = require("node:fs/promises");
+var import_node_path2 = require("node:path");
 var import_adm_zip = __toESM(require_adm_zip(), 1);
-import { createHash } from "node:crypto";
-import { mkdir as mkdir2, readFile as readFile2, rename, stat, writeFile as writeFile2 } from "node:fs/promises";
-import { join as join2 } from "node:path";
 
 // server/providers/ntaGtfsRealtime/query.ts
 function parseBounds(value) {
@@ -21616,7 +21618,7 @@ async function fetchStaticGtfsStopTimes(tripIds) {
   if (!targets.length) return /* @__PURE__ */ new Map();
   const url2 = staticGtfsUrl();
   if (!url2) return /* @__PURE__ */ new Map();
-  return cached(`nta-static-gtfs-stop-times:${createHash("sha256").update(targets.join("\n")).digest("hex").slice(0, 16)}`, ttlMs, async () => {
+  return cached(`nta-static-gtfs-stop-times:${(0, import_node_crypto.createHash)("sha256").update(targets.join("\n")).digest("hex").slice(0, 16)}`, ttlMs, async () => {
     const zip = new import_adm_zip.default(await readStaticGtfsZip(url2));
     const stopTimesByTripId = parseStopTimesForTrips(zipText(zip, "stop_times.txt"), new Set(targets));
     for (const stopTimes of stopTimesByTripId.values()) {
@@ -21654,7 +21656,7 @@ async function fetchStaticGtfsTripContext(tripId) {
 async function fetchStaticGtfsShape(shapeId) {
   const url2 = staticGtfsUrl();
   if (!url2 || !shapeId) return [];
-  return cached(`nta-static-gtfs-shape:${createHash("sha256").update(shapeId).digest("hex").slice(0, 16)}`, ttlMs, async () => {
+  return cached(`nta-static-gtfs-shape:${(0, import_node_crypto.createHash)("sha256").update(shapeId).digest("hex").slice(0, 16)}`, ttlMs, async () => {
     const zip = new import_adm_zip.default(await readStaticGtfsZip(url2));
     return parseShapesForShapeId(zipText(zip, "shapes.txt"), shapeId).sort((left, right) => left.sequence - right.sequence);
   });
@@ -21689,30 +21691,30 @@ function staticGtfsSource() {
 }
 async function readStaticGtfsZip(url2) {
   const cachePath = staticGtfsCachePath(url2);
-  if (await isFreshCacheEntry(cachePath)) return await readFile2(cachePath);
+  if (await isFreshCacheEntry(cachePath)) return await (0, import_promises2.readFile)(cachePath);
   const response = await fetch(url2, { headers: { accept: "application/zip, application/octet-stream" } });
   if (!response.ok) throw new Error(`NTA static GTFS responded ${response.status}`);
   const buffer = Buffer.from(await response.arrayBuffer());
-  await mkdir2(cacheDirectory(), { recursive: true });
+  await (0, import_promises2.mkdir)(cacheDirectory(), { recursive: true });
   const temporaryPath = `${cachePath}.${process.pid}.tmp`;
-  await writeFile2(temporaryPath, buffer);
-  await rename(temporaryPath, cachePath);
+  await (0, import_promises2.writeFile)(temporaryPath, buffer);
+  await (0, import_promises2.rename)(temporaryPath, cachePath);
   return buffer;
 }
 async function isFreshCacheEntry(path) {
   try {
-    const details = await stat(path);
+    const details = await (0, import_promises2.stat)(path);
     return Date.now() - details.mtimeMs < ttlMs;
   } catch {
     return false;
   }
 }
 function staticGtfsCachePath(url2) {
-  const hash2 = createHash("sha256").update(url2).digest("hex").slice(0, 16);
-  return join2(cacheDirectory(), `nta-static-gtfs-${hash2}.zip`);
+  const hash2 = (0, import_node_crypto.createHash)("sha256").update(url2).digest("hex").slice(0, 16);
+  return (0, import_node_path2.join)(cacheDirectory(), `nta-static-gtfs-${hash2}.zip`);
 }
 function cacheDirectory() {
-  return process.env.ATLASOPS_CACHE_DIR?.trim() || join2(process.cwd(), ".atlasops-cache");
+  return process.env.ATLASOPS_CACHE_DIR?.trim() || (0, import_node_path2.join)(process.cwd(), ".atlasops-cache");
 }
 function zipText(zip, name) {
   const entry = zip.getEntry(name);
@@ -41974,9 +41976,6 @@ async function handler(request, response) {
   }
   sendJson(response, 404, { error: "Not found" });
 }
-export {
-  handler as default
-};
 /*! Bundled license information:
 
 long/umd/index.js:
