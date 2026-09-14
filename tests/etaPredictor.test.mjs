@@ -3,6 +3,18 @@ import test from 'node:test'
 import { predictArrivalAtStop, predictNextStopArrival } from '../src/data/moving/etaPredictor.ts'
 
 const now = '2026-09-02T12:00:00.000Z'
+test('stop colors retain only explicit trip direction IDs and destination labels', () => {
+  for (const directionId of ['0', '1', undefined, 'invalid']) {
+    const context = tripContext()
+    context.trip = { ...context.trip, directionId, headsign: 'City centre' }
+    const prediction = predictNextStopArrival({ vehicle: vehicleAt(-6, 0.0108, { speed: 5, observedAt: now }), tripContext: context, recentPositions: [], now })
+    assert.ok(prediction.routeStops.features.length)
+    for (const stop of prediction.routeStops.features) {
+      assert.equal(stop.properties.directionId, ['0', '1'].includes(directionId) ? directionId : undefined)
+      assert.equal(stop.properties.directionLabel, 'To City centre')
+    }
+  }
+})
 
 test('normal movement predicts the next sequenced stop from route progress', () => {
   const prediction = predictNextStopArrival({

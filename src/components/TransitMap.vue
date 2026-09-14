@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type mapboxgl from 'mapbox-gl'
 import type { FeatureCollection } from 'geojson'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { LocateFixed, TrafficCone, MapPin } from '@lucide/vue'
+import { LocateFixed, TrafficCone, MapPin, Navigation } from '@lucide/vue'
 import busIcon from '@mapbox/maki/icons/bus.svg?url'
 import stopIcon from '@mapbox/maki/icons/marker.svg?url'
 import type {
@@ -38,6 +38,8 @@ const showStops = ref(false)
 const mapError = ref('')
 const token = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN?.trim()
 let map: mapboxgl.Map | undefined
+let locationMarker: mapboxgl.Marker | undefined
+let locationFocused = false
 let observer: ResizeObserver | undefined
 let animation = 0
 let styleReady = false
@@ -46,6 +48,30 @@ let displayed: AtlasMovingAssetCollection = {
   features: [],
 }
 const empty: FeatureCollection = { type: 'FeatureCollection', features: [] }
+const stopDirections = computed(() => {
+  const directions = new Map<string, string>()
+  for (const stop of props.eta?.routeStops?.features ?? []) {
+    const id = stop.properties.directionId
+    if (id) directions.set(id, stop.properties.directionLabel || `Direction ${Number(id) + 1}`)
+  }
+  return [...directions].map(([id, label]) => ({ id, label }))
+})
+function focusLocation() {
+  if (!map || !props.userLocation) return
+  map.flyTo({
+    center: [props.userLocation.longitude, props.userLocation.latitude],
+    zoom: 15,
+    duration: 900,
+  })
+}
+function updateLocation() {
+  if (!map || !locationMarker || !props.userLocation) return
+  locationMarker.setLngLat([props.userLocation.longitude, props.userLocation.latitude]).addTo(map)
+  if (!locationFocused) {
+    locationFocused = true
+    if (!props.selectedVehicle && !props.selectedStop) focusLocation()
+  }
+}
 function setData(id: string, data: FeatureCollection) {
   ;(map?.getSource(id) as mapboxgl.GeoJSONSource | undefined)?.setData(data)
 }
@@ -171,6 +197,12 @@ onMounted(async () => {
     })
     if (import.meta.env.DEV)
       (window as Window & { __busTimeMap?: mapboxgl.Map }).__busTimeMap = map
+    const locationElement = document.createElement('div')
+    locationElement.className = 'user-location-pin'
+    locationElement.setAttribute('role', 'img')
+    locationElement.setAttribute('aria-label', 'Your location')
+    locationElement.title = 'Your location'
+    locationMarker = new renderer.Marker({ element: locationElement })
     map.addControl(
       new renderer.AttributionControl({ compact: true }),
       'bottom-right',
@@ -223,9 +255,8 @@ watch(
 watch(() => props.area, fitArea)
 watch(
   () => props.userLocation,
-  () => {
-    if (!props.area) fitArea()
-  },
+  updateLocation,
+  { flush: 'post' },
 )
 watch(
   () => [
@@ -292,7 +323,7 @@ async function setupMapLayersAndData() {
       source: 'stops',
       paint: {
         'circle-radius': 12,
-        'circle-color': '#ffffff',
+        'circle-color': ['match', ['get', 'directionId'], '0', '#b9ddff', '1', '#f4c0db', '#e3e6e8'],
         'circle-stroke-color': '#555f60',
         'circle-stroke-width': 1.5,
       },
@@ -397,7 +428,10 @@ async function setupMapLayersAndData() {
     setData('vehicles', displayed)
     updateDetails()
     if (props.selectedVehicle || props.selectedStop) focusSelection()
-    else fitArea()
+    else if (!locationFocused && props.userLocation) updateLocation()
+    else if (!styleReady && props.userLocation) focusLocation()
+    else if (!styleReady) fitArea()
+    updateLocation()
   } catch {
     mapError.value =
       'Map symbols could not load. Bus details are still available.'
@@ -406,6 +440,7 @@ async function setupMapLayersAndData() {
 onUnmounted(() => {
   cancelAnimationFrame(animation)
   observer?.disconnect()
+  locationMarker?.remove()
   map?.remove()
   map = undefined
 })
@@ -417,6 +452,13 @@ onUnmounted(() => {
       <span class="map-updating-dot" />Updating live positions
     </p>
     <div class="map-tools">
+      <button
+        v-if="userLocation"
+        class="icon-button"
+        title="Zoom to my location"
+        aria-label="Zoom to my location"
+        @click="focusLocation"
+      ><Navigation :size="20" /></button>
       <button
         class="icon-button"
         title="Fit selected area"
@@ -447,7 +489,8 @@ onUnmounted(() => {
     </div>
     <div class="map-key">
       <span><i class="key-bus" />Bus</span
-      ><span><i class="key-stop" />Stop</span
+      ><span v-for="direction in stopDirections" :key="direction.id" :title="direction.label"><i :class="direction.id === '0' ? 'key-direction-zero' : 'key-direction-one'" />{{ direction.label }}</span
+      ><span><i class="key-stop" />{{ stopDirections.length ? 'Other stops' : 'Stop' }}</span
       ><span><i class="key-late" />Late</span>
     </div>
     <p v-if="mapError" class="map-warning" role="status">{{ mapError }}</p>

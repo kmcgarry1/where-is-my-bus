@@ -45,6 +45,8 @@ export interface AtlasTransitStopProperties {
   stopId: string
   name: string
   routeStopRole?: 'ordinary' | 'next-stop'
+  directionId?: '0' | '1'
+  directionLabel?: string
   sourceProperties: Record<string, unknown>
 }
 

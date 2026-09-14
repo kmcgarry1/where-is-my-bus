@@ -70,6 +70,8 @@ export function useTransit() {
   const detailLoading = ref(false)
   const error = ref('')
   const searchError = ref('')
+  const nearby = ref(false)
+  const nearbyDistances = ref<Record<string, number>>({})
   const detailError = ref('')
   const source = ref('')
   const now = ref(Date.now())
@@ -328,6 +330,7 @@ export function useTransit() {
   }
   async function refresh() {
     if (!selectedArea.value) return
+    if (searchMode.value !== 'live' && !selectedRoute.value && !selectedStop.value && !selectedVehicle.value) return
     const version = scopeVersion
     liveController?.abort()
     liveController = new AbortController()
@@ -431,6 +434,7 @@ export function useTransit() {
     if (selectedRoute.value || selectedStop.value || selectedVehicle.value)
       reset()
   })
+  watch(searchMode, () => changeScope())
   watch(selectedArea, () => {
     stopsController?.abort()
     query.value = ''
@@ -439,6 +443,7 @@ export function useTransit() {
     changeScope()
   }, { immediate: true })
   watch([query, searchMode, selectedArea], () => {
+    nearby.value = false
     clearTimeout(searchTimer)
     searchController?.abort()
     routeResults.value = []
@@ -482,6 +487,42 @@ export function useTransit() {
       }
     }, 300)
   })
+  async function findNearbyStops(longitude: number, latitude: number) {
+    clearTimeout(searchTimer)
+    searchController?.abort()
+    const controller = new AbortController()
+    searchController = controller
+    nearby.value = true
+    nearbyDistances.value = {}
+    stopResults.value = []
+    routeResults.value = []
+    searching.value = true
+    searchError.value = ''
+    // A small geographic window avoids downloading the nationwide stop index.
+    const dy = 1 / 111.195
+    const dx = dy / Math.cos(latitude * Math.PI / 180)
+    try {
+      const result = await request<{ collection: AtlasTransitStopCollection }>('stops', new URLSearchParams({
+        bounds: [longitude - dx, latitude - dy, longitude + dx, latitude + dy].join(','),
+        limit: '200',
+      }), controller.signal)
+      if (controller.signal.aborted) return
+      const distances: Record<string, number> = {}
+      for (const stop of result.collection.features) {
+        const [lng, lat] = stop.geometry.coordinates
+        distances[stop.properties.id] = Math.hypot((lng! - longitude) / dx, (lat! - latitude) / dy) * 1000
+      }
+      nearbyDistances.value = distances
+      stopResults.value = result.collection.features
+        .filter(stop => distances[stop.properties.id]! <= 1000)
+        .sort((a, b) => distances[a.properties.id]! - distances[b.properties.id]!)
+      visibleStops.value = { type: 'FeatureCollection', features: stopResults.value }
+    } catch (cause) {
+      if (!controller.signal.aborted) searchError.value = cause instanceof Error ? cause.message : 'Nearby stops unavailable.'
+    } finally {
+      if (!controller.signal.aborted) searching.value = false
+    }
+  }
   const poll = setInterval(() => {
     if (!document.hidden && !loading.value) void refresh()
   }, 15000)
@@ -520,6 +561,9 @@ export function useTransit() {
     detailLoading,
     error,
     searchError,
+    nearby,
+    nearbyDistances,
+    findNearbyStops,
     detailError,
     source,
     refresh,

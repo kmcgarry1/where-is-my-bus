@@ -91,7 +91,7 @@ await page.route('**/api/providers/nta/**', async (route) => {
     body = {
       context: {
         source: 'configured',
-        trip: { tripId: 'trip-1', routeId: 'route-1' },
+        trip: { tripId: 'trip-1', routeId: 'route-1', directionId: '0', headsign: 'Phoenix Park' },
         stops: [
           {
             tripId: 'trip-1',
@@ -219,6 +219,7 @@ try {
     await page.getByRole('button', { name: 'More map space', exact: true }).click()
     assert.ok(await page.locator('.map-pane').evaluate(element => element.getBoundingClientRect().height > innerHeight * 0.6), 'map can expand')
     await page.getByRole('button', { name: 'More detail space', exact: true }).click()
+    assert.equal(await page.locator('.mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group, .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group').isVisible(), false, 'compressed map hides overlapping zoom controls')
     await page.locator('.delay-section').scrollIntoViewIfNeeded()
     assert.ok(await page.locator('.delay-section').isVisible(), 'delay details remain reachable')
     await page.screenshot({ path: `artifacts/mobile-${viewport.width}x${viewport.height}.png`, fullPage: true })

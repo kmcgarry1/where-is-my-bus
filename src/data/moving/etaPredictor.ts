@@ -188,6 +188,7 @@ function scheduleOnlyPrediction(context: EtaPredictionContext, reason: string, m
       reason,
     },
     nextStopFeature: stopFeature(stop),
+    routeStops: context.tripContext ? routeStopCollection(context.tripContext, stop?.stopId) : undefined,
   }
 }
 
@@ -392,6 +393,8 @@ function routeStopCollection(tripContext: AtlasTripContext, nextStopId?: string)
           stopId: stop.stopId,
           name: stop.name ?? `Stop ${stop.stopId}`,
           routeStopRole: stop.stopId === nextStopId ? 'next-stop' : 'ordinary',
+          directionId: tripContext.trip?.directionId === '0' || tripContext.trip?.directionId === '1' ? tripContext.trip.directionId : undefined,
+          directionLabel: tripContext.trip?.headsign ? `To ${tripContext.trip.headsign}` : directionLabel(tripContext),
           sourceProperties: {
             source: 'selected-route',
             stopSequence: stop.stopSequence,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   Bus,
   Search,
@@ -15,6 +15,7 @@ import {
   List,
   Sun,
   Moon,
+  LocateFixed,
 } from '@lucide/vue'
 import TransitMap from './components/TransitMap.vue'
 import { useTransit } from './composables/useTransit'
@@ -42,6 +43,9 @@ const {
   detailLoading,
   error,
   searchError,
+  nearby,
+  nearbyDistances,
+  findNearbyStops,
   detailError,
   source,
   refresh,
@@ -129,20 +133,48 @@ function toggleTheme() {
   theme.value = theme.value === 'dark' ? 'light' : 'dark'
 }
 const userLocation = ref<{ longitude: number; latitude: number } | null>(null)
+const locating = ref(false)
+const locationError = ref('')
+let nearbyRequest = 0
+watch([query, searchMode, selectedArea], () => { nearbyRequest++; locating.value = false; locationError.value = '' })
+async function searchNearby() {
+  changeMode('stops')
+  await nextTick()
+  const request = ++nearbyRequest
+  locating.value = true
+  locationError.value = ''
+  try {
+    if (!navigator.geolocation) throw new Error('Location is unavailable in this browser. Search by stop name or number instead.')
+    const position = await new Promise<GeolocationPosition>((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { maximumAge: 30000, timeout: 15000, enableHighAccuracy: true }))
+    if (request !== nearbyRequest) return
+    const { longitude, latitude } = position.coords
+    userLocation.value = { longitude, latitude }
+    await findNearbyStops(longitude, latitude)
+  } catch (cause) {
+    if (request === nearbyRequest) locationError.value = cause instanceof Error ? cause.message : 'Location could not be accessed. Allow location in your browser, or search by stop name or number.'
+  } finally {
+    if (request === nearbyRequest) locating.value = false
+  }
+}
+let locationWatch: number | undefined
 onMounted(() => {
   if (!navigator.geolocation) return
-  navigator.geolocation.getCurrentPosition(
+  locationWatch = navigator.geolocation.watchPosition(
     (position) => {
       const { longitude, latitude } = position.coords
+      const firstFix = !userLocation.value
       userLocation.value = { longitude, latitude }
       const nearest = nearestTransportRegion(longitude, latitude)
-      if (nearest && selectedArea.value === 'ireland') selectedArea.value = nearest.id
+      if (firstFix && nearest && selectedArea.value === 'ireland') selectedArea.value = nearest.id
     },
     () => {
       // Permission denied or unavailable; keep the nationwide default view.
     },
-    { maximumAge: 5 * 60 * 1000, timeout: 8000 },
+    { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 },
   )
+})
+onUnmounted(() => {
+  if (locationWatch !== undefined) navigator.geolocation.clearWatch(locationWatch)
 })
 </script>
 
@@ -222,7 +254,12 @@ onMounted(() => {
                 "
                 type="search"
               /></div
-          ></template>
+          >
+            <button v-if="searchMode === 'stops'" class="text-button nearby-button" :disabled="locating || searching" @click="searchNearby">
+              <LocateFixed :size="18" />{{ locating ? 'Finding nearby stops...' : 'Bus stops near me' }}
+            </button>
+            <p v-if="locationError" class="error-state" role="alert">{{ locationError }}</p>
+          </template>
         </div>
         <div class="panel-content">
           <p v-if="source === 'fixture'" class="notice">
@@ -377,7 +414,7 @@ onMounted(() => {
           </template>
           <template v-if="!selected && selectedArea && searchMode !== 'live'">
             <div class="section-caption">
-              <h3>{{ searchMode === 'stops' ? 'Bus stops' : 'Bus routes' }}</h3>
+              <h3>{{ nearby ? 'Stops within 1 km' : searchMode === 'stops' ? 'Bus stops' : 'Bus routes' }}</h3>
               <span v-if="searching" role="status">Searching...</span>
             </div>
             <p v-if="searchError" class="error-state" role="alert">
@@ -391,7 +428,7 @@ onMounted(() => {
             >
               <MapPin :size="19" /><span
                 ><strong>{{ stop.properties.name }}</strong
-                ><small>Stop {{ stop.properties.stopId }}</small></span
+                ><small>Stop {{ stop.properties.stopId }}<template v-if="nearby"> · {{ Math.round((nearbyDistances[stop.properties.id] || 0) / 10) * 10 }} m straight-line</template></small></span
               ><ChevronRight :size="17" />
             </button>
             <button
@@ -412,7 +449,7 @@ onMounted(() => {
             </button>
             <p
               v-if="
-                query.trim().length >= 2 &&
+                (nearby || query.trim().length >= 2) &&
                 !searching &&
                 !searchError &&
                 !stopResults.length &&
@@ -420,7 +457,7 @@ onMounted(() => {
               "
               class="empty-copy"
             >
-              No matching {{ searchMode }} found.
+              {{ nearby ? 'No bus stops found within 1 km. Search by stop name or number.' : `No matching ${searchMode} found.` }}
             </p>
           </template>
           <section
