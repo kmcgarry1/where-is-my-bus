@@ -8,6 +8,23 @@ export const transportRegions: AtlasTransportRegion[] = [
   { id: 'waterford', label: 'Waterford City', west: -7.18, south: 52.21, east: -6.98, north: 52.31 },
 ]
 
+// Picks the closest defined region to a point, but only if it's plausibly nearby
+// (within ~65km); otherwise callers should fall back to the nationwide view.
+export function nearestTransportRegion(longitude: number, latitude: number, maxDistanceDegrees = 0.6): AtlasTransportRegion | undefined {
+  let closest: AtlasTransportRegion | undefined
+  let closestDistance = Infinity
+  for (const region of transportRegions) {
+    const centerLongitude = (region.west + region.east) / 2
+    const centerLatitude = (region.south + region.north) / 2
+    const distance = Math.hypot(longitude - centerLongitude, latitude - centerLatitude)
+    if (distance < closestDistance) {
+      closestDistance = distance
+      closest = region
+    }
+  }
+  return closestDistance <= maxDistanceDegrees ? closest : undefined
+}
+
 export function searchRouteOptions(routes: AtlasTransportRouteOption[], query: string, limit = 8) {
   const normalized = query.trim().toLowerCase()
   if (!normalized) return routes.slice(0, limit)

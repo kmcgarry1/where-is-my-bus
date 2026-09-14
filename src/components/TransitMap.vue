@@ -23,6 +23,9 @@ const props = defineProps<{
   selectedStop?: AtlasTransitStopFeature
   eta?: AtlasEtaPrediction
   trail: FeatureCollection
+  updating?: boolean
+  dark?: boolean
+  userLocation?: { longitude: number; latitude: number } | null
 }>()
 const emit = defineEmits<{
   vehicle: [AtlasMovingAssetFeature]
@@ -37,6 +40,7 @@ const token = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN?.trim()
 let map: mapboxgl.Map | undefined
 let observer: ResizeObserver | undefined
 let animation = 0
+let styleReady = false
 let displayed: AtlasMovingAssetCollection = {
   type: 'FeatureCollection',
   features: [],
@@ -54,6 +58,12 @@ function fitArea() {
       ],
       { padding: 40, duration: 600 },
     )
+  else if (props.userLocation)
+    map?.flyTo({
+      center: [props.userLocation.longitude, props.userLocation.latitude],
+      zoom: 13,
+      duration: 900,
+    })
   else
     map?.fitBounds(
       [
@@ -140,7 +150,9 @@ onMounted(async () => {
       container: container.value,
       accessToken: token || undefined,
       style: token
-        ? 'mapbox://styles/mapbox/light-v11'
+        ? props.dark
+          ? 'mapbox://styles/mapbox/dark-v11'
+          : 'mapbox://styles/mapbox/light-v11'
         : {
             version: 8,
             sources: {
@@ -176,148 +188,11 @@ onMounted(async () => {
     })
     map.on('load', async () => {
       if (!map) return
-      try {
-        await registerIcon('local-bus', busIcon)
-        await registerIcon('local-stop', stopIcon)
-        if (!map) return
-        for (const id of ['vehicles', 'stops', 'route', 'selected', 'trail'])
-          map.addSource(id, { type: 'geojson', data: empty })
-        map.addLayer({
-          id: 'route-line',
-          type: 'line',
-          source: 'route',
-          paint: {
-            'line-color': '#187565',
-            'line-width': 5,
-            'line-opacity': 0.65,
-          },
-        })
-        map.addLayer({
-          id: 'trail-line',
-          type: 'line',
-          source: 'trail',
-          paint: {
-            'line-color': '#a3477d',
-            'line-width': 3,
-            'line-dasharray': [2, 2],
-          },
-        })
-        map.addLayer({
-          id: 'stop-bg',
-          type: 'circle',
-          source: 'stops',
-          paint: {
-            'circle-radius': 12,
-            'circle-color': '#ffffff',
-            'circle-stroke-color': '#555f60',
-            'circle-stroke-width': 1.5,
-          },
-        })
-        map.addLayer({
-          id: 'stop-icons',
-          type: 'symbol',
-          source: 'stops',
-          layout: {
-            'icon-image': map.hasImage('bus-stop') ? 'bus-stop' : 'local-stop',
-            'icon-allow-overlap': true,
-          },
-        })
-        map.addLayer({
-          id: 'selected-halo',
-          type: 'circle',
-          source: 'selected',
-          paint: {
-            'circle-radius': 25,
-            'circle-color': '#21846c',
-            'circle-opacity': 0.2,
-            'circle-stroke-color': '#156e59',
-            'circle-stroke-width': 2,
-          },
-        })
-        map.addLayer({
-          id: 'bus-bg',
-          type: 'circle',
-          source: 'vehicles',
-          paint: {
-            'circle-radius': 15,
-            'circle-color': [
-              'case',
-              ['==', ['get', 'scheduleStatus'], 'late'],
-              '#f2c663',
-              '#69cfb2',
-            ],
-            'circle-stroke-color': '#ffffff',
-            'circle-stroke-width': 2,
-          },
-        })
-        map.addLayer({
-          id: 'bus-icons',
-          type: 'symbol',
-          source: 'vehicles',
-          layout: { 'icon-image': 'local-bus', 'icon-allow-overlap': true },
-        })
-        if (token) {
-          map.addSource('traffic', {
-            type: 'vector',
-            url: 'mapbox://mapbox.mapbox-traffic-v1',
-          })
-          map.addLayer(
-            {
-              id: 'traffic-lines',
-              type: 'line',
-              source: 'traffic',
-              'source-layer': 'traffic',
-              layout: { visibility: 'none' },
-              paint: {
-                'line-width': 3,
-                'line-offset': 2,
-                'line-color': [
-                  'match',
-                  ['get', 'congestion'],
-                  'moderate',
-                  '#d5a631',
-                  'heavy',
-                  '#d16b40',
-                  'severe',
-                  '#c44558',
-                  '#5ba88a',
-                ],
-              },
-            },
-            'route-line',
-          )
-        }
-        for (const layer of ['bus-bg', 'stop-bg']) {
-          map.on('mouseenter', layer, () => {
-            if (map) map.getCanvas().style.cursor = 'pointer'
-          })
-          map.on('mouseleave', layer, () => {
-            if (map) map.getCanvas().style.cursor = ''
-          })
-          map.on('click', layer, (event) => {
-            const id = event.features?.[0]?.properties?.id
-            if (layer === 'bus-bg') {
-              const bus = props.vehicles.features.find(
-                (item) => item.properties.id === id,
-              )
-              if (bus) emit('vehicle', bus)
-            } else {
-              const stop = (props.eta?.routeStops ?? props.stops).features.find(
-                (item) => item.properties.id === id,
-              )
-              if (stop) emit('stop', stop)
-            }
-          })
-        }
-        displayed = props.vehicles
-        setData('vehicles', displayed)
-        updateDetails()
-        if (props.selectedVehicle || props.selectedStop) focusSelection()
-        else fitArea()
-      } catch {
-        mapError.value =
-          'Map symbols could not load. Bus details are still available.'
-      }
+      await setupMapLayersAndData()
+      styleReady = true
+    })
+    map.on('style.load', () => {
+      if (styleReady) void setupMapLayersAndData()
     })
     observer = new ResizeObserver(() => {
       map?.resize()
@@ -347,6 +222,12 @@ watch(
 )
 watch(() => props.area, fitArea)
 watch(
+  () => props.userLocation,
+  () => {
+    if (!props.area) fitArea()
+  },
+)
+watch(
   () => [
     props.eta,
     props.stops,
@@ -370,6 +251,158 @@ watch(traffic, (show) => {
     )
 })
 watch(showStops, requestStops)
+watch(
+  () => props.dark,
+  (dark) => {
+    if (!map || !token) return
+    map.setStyle(dark ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11')
+  },
+)
+async function setupMapLayersAndData() {
+  if (!map) return
+  try {
+    await registerIcon('local-bus', busIcon)
+    await registerIcon('local-stop', stopIcon)
+    if (!map) return
+    for (const id of ['vehicles', 'stops', 'route', 'selected', 'trail'])
+      map.addSource(id, { type: 'geojson', data: empty })
+    map.addLayer({
+      id: 'route-line',
+      type: 'line',
+      source: 'route',
+      paint: {
+        'line-color': '#187565',
+        'line-width': 5,
+        'line-opacity': 0.65,
+      },
+    })
+    map.addLayer({
+      id: 'trail-line',
+      type: 'line',
+      source: 'trail',
+      paint: {
+        'line-color': '#a3477d',
+        'line-width': 3,
+        'line-dasharray': [2, 2],
+      },
+    })
+    map.addLayer({
+      id: 'stop-bg',
+      type: 'circle',
+      source: 'stops',
+      paint: {
+        'circle-radius': 12,
+        'circle-color': '#ffffff',
+        'circle-stroke-color': '#555f60',
+        'circle-stroke-width': 1.5,
+      },
+    })
+    map.addLayer({
+      id: 'stop-icons',
+      type: 'symbol',
+      source: 'stops',
+      layout: {
+        'icon-image': map.hasImage('bus-stop') ? 'bus-stop' : 'local-stop',
+        'icon-allow-overlap': true,
+      },
+    })
+    map.addLayer({
+      id: 'selected-halo',
+      type: 'circle',
+      source: 'selected',
+      paint: {
+        'circle-radius': 25,
+        'circle-color': '#21846c',
+        'circle-opacity': 0.2,
+        'circle-stroke-color': '#156e59',
+        'circle-stroke-width': 2,
+      },
+    })
+    map.addLayer({
+      id: 'bus-bg',
+      type: 'circle',
+      source: 'vehicles',
+      paint: {
+        'circle-radius': 15,
+        'circle-color': [
+          'case',
+          ['==', ['get', 'scheduleStatus'], 'late'],
+          '#f2c663',
+          '#69cfb2',
+        ],
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 2,
+      },
+    })
+    map.addLayer({
+      id: 'bus-icons',
+      type: 'symbol',
+      source: 'vehicles',
+      layout: { 'icon-image': 'local-bus', 'icon-allow-overlap': true },
+    })
+    if (token) {
+      map.addSource('traffic', {
+        type: 'vector',
+        url: 'mapbox://mapbox.mapbox-traffic-v1',
+      })
+      map.addLayer(
+        {
+          id: 'traffic-lines',
+          type: 'line',
+          source: 'traffic',
+          'source-layer': 'traffic',
+          layout: { visibility: traffic.value ? 'visible' : 'none' },
+          paint: {
+            'line-width': 3,
+            'line-offset': 2,
+            'line-color': [
+              'match',
+              ['get', 'congestion'],
+              'moderate',
+              '#d5a631',
+              'heavy',
+              '#d16b40',
+              'severe',
+              '#c44558',
+              '#5ba88a',
+            ],
+          },
+        },
+        'route-line',
+      )
+    }
+    for (const layer of ['bus-bg', 'stop-bg']) {
+      map.on('mouseenter', layer, () => {
+        if (map) map.getCanvas().style.cursor = 'pointer'
+      })
+      map.on('mouseleave', layer, () => {
+        if (map) map.getCanvas().style.cursor = ''
+      })
+      map.on('click', layer, (event) => {
+        const id = event.features?.[0]?.properties?.id
+        if (layer === 'bus-bg') {
+          const bus = props.vehicles.features.find(
+            (item) => item.properties.id === id,
+          )
+          if (bus) emit('vehicle', bus)
+        } else {
+          const stop = (props.eta?.routeStops ?? props.stops).features.find(
+            (item) => item.properties.id === id,
+          )
+          if (stop) emit('stop', stop)
+        }
+      })
+    }
+    displayed = props.vehicles
+    setData('vehicles', displayed)
+    updateDetails()
+    if (props.selectedVehicle || props.selectedStop) focusSelection()
+    else fitArea()
+  } catch {
+    mapError.value =
+      'Map symbols could not load. Bus details are still available.'
+  }
+}
 onUnmounted(() => {
   cancelAnimationFrame(animation)
   observer?.disconnect()
@@ -380,6 +413,9 @@ onUnmounted(() => {
 <template>
   <section class="map-pane" aria-label="Bus location map">
     <div ref="container" class="map-canvas" />
+    <p v-if="updating" class="map-updating-badge" role="status">
+      <span class="map-updating-dot" />Updating live positions
+    </p>
     <div class="map-tools">
       <button
         class="icon-button"

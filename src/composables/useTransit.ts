@@ -52,7 +52,7 @@ async function request<T>(
 }
 
 export function useTransit() {
-  const selectedArea = ref('')
+  const selectedArea = ref('ireland')
   const searchMode = ref<'stops' | 'routes' | 'live'>('stops')
   const query = ref('')
   const selectedRoute = shallowRef<RouteResult>()
@@ -437,7 +437,7 @@ export function useTransit() {
     clearSelection()
     visibleStops.value = emptyStops()
     changeScope()
-  })
+  }, { immediate: true })
   watch([query, searchMode, selectedArea], () => {
     clearTimeout(searchTimer)
     searchController?.abort()

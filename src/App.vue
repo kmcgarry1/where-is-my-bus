@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import {
   Bus,
   Search,
@@ -11,10 +11,14 @@ import {
   RefreshCw,
   AlertTriangle,
   ChevronRight,
+  Map as MapIcon,
+  List,
+  Sun,
+  Moon,
 } from '@lucide/vue'
 import TransitMap from './components/TransitMap.vue'
 import { useTransit } from './composables/useTransit'
-import { transportRegions } from './data/moving/transportFilters'
+import { nearestTransportRegion, transportRegions } from './data/moving/transportFilters'
 const state = useTransit()
 const {
   selectedArea,
@@ -49,6 +53,16 @@ const {
 const selected = computed(
   () => selectedRoute.value || selectedStop.value || selectedVehicle.value,
 )
+const mobileView = ref<'balanced' | 'map' | 'details'>('balanced')
+const mobileSearchOpen = ref(false)
+watch(() => [selectedRoute.value?.routeId, selectedStop.value?.properties.id, selectedVehicle.value?.properties.id].join('|'), () => {
+  mobileView.value = 'balanced'
+  mobileSearchOpen.value = false
+})
+function openMobileSearch() {
+  mobileView.value = 'details'
+  mobileSearchOpen.value = !mobileSearchOpen.value
+}
 const modes = [
   { id: 'stops' as const, label: 'Stops', icon: MapPin },
   { id: 'routes' as const, label: 'Routes', icon: Route },
@@ -97,26 +111,75 @@ const schedule = computed(() => {
       ? 'On time'
       : `${Math.round(Math.abs(seconds) / 60)} min ${seconds > 0 ? 'late' : 'early'}`
 })
+const storedTheme = localStorage.getItem('bustime-theme')
+const theme = ref<'light' | 'dark'>(
+  storedTheme === 'light' || storedTheme === 'dark'
+    ? storedTheme
+    : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+)
+watch(
+  theme,
+  (value) => {
+    document.documentElement.setAttribute('data-theme', value)
+    localStorage.setItem('bustime-theme', value)
+  },
+  { immediate: true },
+)
+function toggleTheme() {
+  theme.value = theme.value === 'dark' ? 'light' : 'dark'
+}
+const userLocation = ref<{ longitude: number; latitude: number } | null>(null)
+onMounted(() => {
+  if (!navigator.geolocation) return
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { longitude, latitude } = position.coords
+      userLocation.value = { longitude, latitude }
+      const nearest = nearestTransportRegion(longitude, latitude)
+      if (nearest && selectedArea.value === 'ireland') selectedArea.value = nearest.id
+    },
+    () => {
+      // Permission denied or unavailable; keep the nationwide default view.
+    },
+    { maximumAge: 5 * 60 * 1000, timeout: 8000 },
+  )
+})
 </script>
 
 <template>
-  <main class="app-shell">
+  <main class="app-shell" :class="[`mobile-view-${mobileView}`, { 'has-selection': selected, 'has-vehicle': selectedVehicle, 'mobile-search-open': mobileSearchOpen }]">
     <header class="app-header">
       <a class="brand" href="/"
         ><span class="brand-icon"><Bus :size="23" /></span
         ><strong>BusTime</strong><span class="brand-region">Ireland</span></a
-      ><span class="header-status"
-        ><i />{{
-          source === 'fixture'
-            ? 'Demo data'
-            : source === 'live'
-              ? 'Live bus locations'
-              : 'Bus arrivals & locations'
-        }}</span
+      ><div class="header-actions"
+        ><button
+          class="theme-toggle"
+          type="button"
+          :title="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+          :aria-label="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+          @click="toggleTheme"
+        >
+          <Sun v-if="theme === 'dark'" :size="18" /><Moon v-else :size="18" /></button
+        ><span class="header-status"
+          ><i :class="{ pulsing: loading }" />{{
+            source === 'fixture'
+              ? 'Demo data'
+              : source === 'live'
+                ? 'Live bus locations'
+                : 'Bus arrivals & locations'
+          }}</span
+        ></div
       >
     </header>
     <div class="workspace">
       <aside class="journey-panel" aria-label="Find your bus">
+        <div class="mobile-panel-bar">
+          <strong>{{ selected ? 'Your journey' : 'Find a bus' }}</strong>
+          <button v-if="selected" class="icon-button" title="Search for another bus or stop" aria-label="Search for another bus or stop" :aria-expanded="mobileSearchOpen" @click="openMobileSearch"><Search :size="20" /></button>
+          <button class="icon-button" title="More map space" aria-label="More map space" :aria-pressed="mobileView === 'map'" @click="mobileView = mobileView === 'map' ? 'balanced' : 'map'"><MapIcon :size="20" /></button>
+          <button class="icon-button" title="More detail space" aria-label="More detail space" :aria-pressed="mobileView === 'details'" @click="mobileView = mobileView === 'details' ? 'balanced' : 'details'"><List :size="20" /></button>
+        </div>
         <div class="search-section">
           <h1>Where is my bus?</h1>
           <label class="field-label" for="area">City or area</label>
@@ -429,6 +492,9 @@ const schedule = computed(() => {
         :selected-stop="selectedStop"
         :eta="eta"
         :trail="trail"
+        :updating="loading && Boolean(visibleVehicles.features.length)"
+        :dark="theme === 'dark'"
+        :user-location="userLocation"
         @vehicle="selectVehicle"
         @stop="selectStop"
         @bounds="state.loadMapStops"

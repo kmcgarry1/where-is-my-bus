@@ -212,6 +212,19 @@ try {
     false,
     'no mobile horizontal overflow',
   )
+  for (const viewport of [{ width: 320, height: 568 }, { width: 430, height: 932 }, { width: 667, height: 375 }]) {
+    await page.setViewportSize(viewport)
+    await page.waitForTimeout(250)
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight + 1), false, 'mobile shell fits viewport')
+    await page.getByRole('button', { name: 'More map space', exact: true }).click()
+    assert.ok(await page.locator('.map-pane').evaluate(element => element.getBoundingClientRect().height > innerHeight * 0.6), 'map can expand')
+    await page.getByRole('button', { name: 'More detail space', exact: true }).click()
+    await page.locator('.delay-section').scrollIntoViewIfNeeded()
+    assert.ok(await page.locator('.delay-section').isVisible(), 'delay details remain reachable')
+    await page.screenshot({ path: `artifacts/mobile-${viewport.width}x${viewport.height}.png`, fullPage: true })
+  }
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('button', { name: 'Search for another bus or stop', exact: true }).click()
   await page.selectOption('#area', 'cork')
   await page.getByRole('tab', { name: 'Live buses' }).click()
   await page.getByText('No buses are reporting in this area.').waitFor()
