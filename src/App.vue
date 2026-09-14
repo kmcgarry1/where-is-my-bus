@@ -205,8 +205,8 @@ const schedule = computed(() => {
               <div class="location-line">
                 <MapPin :size="17" /><span
                   >{{
-                    selectedVehicle.properties.nextStopName
-                      ? `Approaching ${selectedVehicle.properties.nextStopName}`
+                    eta?.stopName && !selectedStop
+                      ? `Next stop: ${eta.stopName}`
                       : 'Last reported location on map'
                   }}<small
                     >Updated

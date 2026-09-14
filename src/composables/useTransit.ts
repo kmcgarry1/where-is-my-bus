@@ -36,10 +36,16 @@ async function request<T>(
   params = new URLSearchParams(),
   signal?: AbortSignal,
 ): Promise<T> {
-  const timeout = AbortSignal.timeout(20000)
-  const response = await fetch(`/api/providers/nta/${path}?${params}`, {
-    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
-  })
+  const timeout = AbortSignal.timeout(path === 'vehicles' && !params.has('stopId') || path === 'alerts' ? 20000 : 120000)
+  let response: Response
+  try {
+    response = await fetch(`/api/providers/nta/${path}?${params}`, {
+      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+    })
+  } catch (cause) {
+    if (signal?.aborted) throw cause
+    throw new Error('Bus information is taking longer than expected. Please try again.')
+  }
   if (!response.ok)
     throw new Error('Bus data could not be loaded. Please try again.')
   return response.json()
@@ -256,10 +262,24 @@ export function useTransit() {
         )
         const candidates = visibleVehicles.value.features.filter((bus) =>
           tripServices.has(bus.properties.tripId ?? ''),
-        )
+        ).sort((a, b) => {
+          const distance = (bus: AtlasMovingAssetFeature) => {
+            const longitudeScale = Math.cos(stop.geometry.coordinates[1]! * Math.PI / 180)
+            return ((bus.geometry.coordinates[0]! - stop.geometry.coordinates[0]!) * longitudeScale) ** 2
+              + (bus.geometry.coordinates[1]! - stop.geometry.coordinates[1]!) ** 2
+          }
+          return distance(a) - distance(b)
+        })
         const next: AtlasStopArrival[] = []
         for (const bus of candidates) {
-          const context = await contextFor(bus)
+          let context: AtlasTripContext | undefined
+          try {
+            context = await contextFor(bus)
+          } catch {
+            if (version !== detailVersion) return
+            detailError.value = 'Some arrival information is unavailable.'
+            continue
+          }
           if (version !== detailVersion) return
           const prediction = predict(bus, context)
           if (prediction.status !== 'available' || !prediction.predictedArrival)
@@ -282,6 +302,9 @@ export function useTransit() {
                   ? 'schedule'
                   : 'atlas',
           })
+          arrivals.value = [...next]
+            .sort((a, b) => Date.parse(a.displayArrival!) - Date.parse(b.displayArrival!))
+            .slice(0, 24)
         }
         arrivals.value = next
           .sort(

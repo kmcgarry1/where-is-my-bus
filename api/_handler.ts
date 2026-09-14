@@ -2,9 +2,6 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { sendJson } from '../server/providers/http.ts'
 import { transportRoutes } from '../server/transport/routes.ts'
 import { ntaGtfsRealtimeRoutes } from '../server/providers/ntaGtfsRealtime/routes.ts'
-import { epaBathingRoutes } from '../server/providers/epaBathing/routes.ts'
-import { sonitusRoutes } from '../server/providers/sonitus/routes.ts'
-import { opwRoutes } from '../server/providers/opw/routes.ts'
 
 // Vercel only runs files under /api as serverless functions; Vite's dev-only
 // middleware (server/**/routes.ts) never executes in production, so every
@@ -13,9 +10,6 @@ import { opwRoutes } from '../server/providers/opw/routes.ts'
 const middlewares = [
   transportRoutes(),
   ntaGtfsRealtimeRoutes(),
-  epaBathingRoutes(),
-  sonitusRoutes(),
-  opwRoutes(),
 ]
 
 export default async function handler(request: IncomingMessage, response: ServerResponse) {

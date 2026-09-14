@@ -319,7 +319,11 @@ onMounted(async () => {
           'Map symbols could not load. Bus details are still available.'
       }
     })
-    observer = new ResizeObserver(() => map?.resize())
+    observer = new ResizeObserver(() => {
+      map?.resize()
+      const selected = props.selectedVehicle ?? props.selectedStop
+      if (selected && map) map.jumpTo({ center: selected.geometry.coordinates as [number, number] })
+    })
     observer.observe(container.value!)
   } catch {
     mapError.value =

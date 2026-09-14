@@ -9,6 +9,7 @@ import {
   fetchStaticGtfsRouteOptions,
   fetchStaticGtfsStopOptions,
   fetchStaticGtfsStopServices,
+  fetchStaticGtfsStopTimes,
 } from '../server/providers/ntaGtfsRealtime/staticGtfs.ts'
 import { transportRegions } from '../src/data/moving/transportFilters.ts'
 
@@ -95,6 +96,10 @@ test('static search scope follows bus route-stop membership in every city', asyn
       (await fetchStaticGtfsStopServices('0')).services[0].routeId,
       '0',
     )
+    assert.deepEqual((await fetchStaticGtfsStopServices('0')).services[0].tripIds, ['trip0'])
+    const batch = await fetchStaticGtfsStopTimes(['trip0', 'trip1'])
+    const selected = await fetchStaticGtfsStopTimes(['trip0'])
+    assert.equal(selected.get('trip0'), batch.get('trip0'), 'selected-trip detail reuses prepared stop timings')
   } finally {
     await new Promise((resolve) => server.close(resolve))
   }

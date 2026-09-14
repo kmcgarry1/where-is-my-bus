@@ -54,7 +54,9 @@ await page.route('**/api/providers/nta/**', async (route) => {
         bus.geometry.coordinates[0] <= bounds[2] &&
         bus.geometry.coordinates[1] >= bounds[1] &&
         bus.geometry.coordinates[1] <= bounds[3])
-    body = { source: 'live', collection: collection(visible ? [bus] : []) }
+    const vehicles = visible ? [bus] : []
+    if (visible && request.searchParams.has('stopId')) vehicles.push({ ...bus, properties: { ...bus.properties, id: 'unavailable-bus', tripId: 'unavailable-trip' } })
+    body = { source: 'live', collection: collection(vehicles) }
   } else if (request.pathname.endsWith('/stops'))
     body = { collection: collection([stop]) }
   else if (request.pathname.endsWith('/routes'))
@@ -76,11 +78,15 @@ await page.route('**/api/providers/nta/**', async (route) => {
           stopId: '1234',
           routeId: 'route-1',
           routeShortName: '46A',
-          tripIds: ['trip-1'],
+          tripIds: ['trip-1', 'unavailable-trip'],
           headsign: 'Phoenix Park',
         },
       ],
     }
+  else if (request.searchParams.get('tripId') === 'unavailable-trip') {
+    await route.fulfill({ status: 503, json: { error: 'Trip unavailable' } })
+    return
+  }
   else if (request.pathname.endsWith('/trip-context'))
     body = {
       context: {
@@ -176,6 +182,7 @@ try {
   await page.getByRole('searchbox').fill('1234')
   await page.locator('.result-row').first().click()
   await page.locator('.arrival-row').first().waitFor()
+  await page.getByText('Some arrival information is unavailable.', { exact: true }).waitFor()
   await page.locator('.arrival-row').first().click()
   await page.locator('.eta-number').filter({ hasText: 'min' }).waitFor()
   assert.ok(
@@ -189,6 +196,14 @@ try {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.waitForTimeout(800)
   await page.waitForFunction(() => !window.__busTimeMap?.isMoving())
+  assert.ok(await page.evaluate(() => {
+    const map = window.__busTimeMap
+    const data = map.getSource('selected')._data
+    const selected = (data.geojson ?? data).features[0]
+    const point = map.project(selected.geometry.coordinates)
+    const rect = map.getContainer().getBoundingClientRect()
+    return point.x >= 0 && point.x <= rect.width && point.y >= 0 && point.y <= rect.height
+  }), 'selected bus stays inside the mobile map')
   await page.screenshot({ path: 'artifacts/bus-mobile.png', fullPage: true })
   assert.equal(
     await page.evaluate(

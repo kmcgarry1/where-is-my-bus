@@ -3,7 +3,7 @@ import { sendJson } from '../http.ts'
 import { adaptNtaVehicles } from './adapter.ts'
 import { adaptNtaServiceAlerts } from './alertsAdapter.ts'
 import { fetchNtaServiceAlerts, fetchNtaVehiclePositions, ntaDiagnostics } from './client.ts'
-import { fetchStaticGtfsRouteOptions, fetchStaticGtfsStopOptions, fetchStaticGtfsStopServices, fetchStaticGtfsTripContext } from './staticGtfs.ts'
+import { fetchStaticGtfsRouteOptions, fetchStaticGtfsStopOptions, fetchStaticGtfsStopServices, fetchStaticGtfsTripContext, fetchStaticGtfsStopTimes } from './staticGtfs.ts'
 import { recordVehicleSnapshot } from '../../transport/historyStore.ts'
 import { insideBounds, matchesQuery, parseBounds, queryLimit } from './query.ts'
 
@@ -144,6 +144,7 @@ export function ntaGtfsRealtimeRoutes(): Connect.NextHandleFunction {
       const collection = adaptNtaVehicles(snapshot.vehicles, snapshot.source)
       const stopId = url.searchParams.get('stopId')
       const stopTrips = stopId ? new Set((await fetchStaticGtfsStopServices(stopId, [])).services.flatMap((service) => service.tripIds)) : undefined
+      if (stopTrips) await fetchStaticGtfsStopTimes(collection.features.filter((vehicle) => stopTrips.has(vehicle.properties.tripId ?? '')).map((vehicle) => vehicle.properties.tripId!))
       let history
       try {
         history = await recordVehicleSnapshot(collection, snapshot.source, snapshot.fetchedAt)

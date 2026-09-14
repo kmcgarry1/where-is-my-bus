@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import AdmZip from 'adm-zip'
+import { parse as parseCsvRecords } from 'csv-parse/sync'
 import { cached } from '../cache.ts'
 import { insideBounds, type Bounds } from './query.ts'
 
@@ -156,8 +157,8 @@ export async function fetchStaticGtfsRouteOptions(bounds?: Bounds): Promise<{ so
   const index = await fetchStaticGtfsIndex()
   let areaRoutes: Set<string> | undefined
   if (bounds) {
-    const services = await fetchStaticGtfsStopServiceIndex()
-    areaRoutes = new Set([...index.stopsById.values()].filter((stop) => insideBounds(stop.longitude, stop.latitude, bounds)).flatMap((stop) => (services.get(stop.stopId) ?? []).map((service) => service.routeId)))
+    const routesByStop = await fetchStaticGtfsStopRouteIndex()
+    areaRoutes = new Set([...index.stopsById.values()].filter((stop) => insideBounds(stop.longitude, stop.latitude, bounds)).flatMap((stop) => [...(routesByStop.get(stop.stopId) ?? [])]))
   }
   const headsignsByRouteId = new Map<string, Set<string>>()
   for (const trip of index.tripsById.values()) {
@@ -185,11 +186,11 @@ export async function fetchStaticGtfsRouteOptions(bounds?: Bounds): Promise<{ so
 
 export async function fetchStaticGtfsStopOptions(): Promise<{ source: StaticGtfsIndex['source']; stops: StaticGtfsStopOption[] }> {
   const index = await fetchStaticGtfsIndex()
-  const services = await fetchStaticGtfsStopServiceIndex()
+  const routesByStop = await fetchStaticGtfsStopRouteIndex()
   return {
     source: index.source,
     stops: [...index.stopsById.values()]
-      .filter((stop) => (services.get(stop.stopId) ?? []).some((service) => isBusRoute(index.routesById.get(service.routeId)?.routeType)))
+      .filter((stop) => routesByStop.has(stop.stopId))
       .map((stop) => ({
         stopId: stop.stopId,
         name: stop.name,
@@ -204,7 +205,7 @@ export async function fetchStaticGtfsStopServices(stopId: string, routeIds: stri
   const index = await fetchStaticGtfsIndex()
   if (!stopId || index.source === 'unavailable') return { source: index.source, services: [] }
   const routeFilter = new Set(routeIds.filter(Boolean))
-  const services = await fetchStaticGtfsStopServiceIndex()
+  const services = await fetchStaticGtfsStopServiceIndex(stopId)
   const nowSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()
   return {
     source: index.source,
@@ -216,28 +217,57 @@ export async function fetchStaticGtfsStopServices(stopId: string, routeIds: stri
   }
 }
 
+const tripStopTimesCache = new Map<string, { expiresAt: number; stops: StaticGtfsStopTime[] }>()
+
 export async function fetchStaticGtfsStopTimes(tripIds: Iterable<string>): Promise<Map<string, StaticGtfsStopTime[]>> {
   const targets = [...new Set([...tripIds].filter(Boolean))].sort()
   if (!targets.length) return new Map()
   const url = staticGtfsUrl()
   if (!url) return new Map()
-  return cached(`nta-static-gtfs-stop-times:${createHash('sha256').update(targets.join('\n')).digest('hex').slice(0, 16)}`, ttlMs, async () => {
-    const zip = new AdmZip(await readStaticGtfsZip(url))
-    const stopTimesByTripId = parseStopTimesForTrips(zipText(zip, 'stop_times.txt'), new Set(targets))
+  const now = Date.now()
+  for (const [id, entry] of tripStopTimesCache) if (entry.expiresAt <= now) tripStopTimesCache.delete(id)
+  const cacheKey = (id: string) => `${url}:${id}`
+  const missing = targets.filter((id) => !tripStopTimesCache.has(cacheKey(id)))
+  if (missing.length) {
+    const stopTimesByTripId = parseStopTimesForTrips(await readStaticGtfsText(url, 'stop_times.txt'), new Set(missing))
     for (const stopTimes of stopTimesByTripId.values()) {
       stopTimes.sort((left, right) => (left.stopSequence ?? 0) - (right.stopSequence ?? 0))
     }
-    return stopTimesByTripId
-  })
+    for (const id of missing) tripStopTimesCache.set(cacheKey(id), { expiresAt: now + ttlMs, stops: stopTimesByTripId.get(id) ?? [] })
+  }
+  const result = new Map(targets.map((id) => [id, tripStopTimesCache.get(cacheKey(id))!.stops]))
+  while (tripStopTimesCache.size > 10000) tripStopTimesCache.delete(tripStopTimesCache.keys().next().value!)
+  return result
 }
 
-async function fetchStaticGtfsStopServiceIndex(): Promise<Map<string, StaticGtfsStopService[]>> {
+async function fetchStaticGtfsStopRouteIndex(): Promise<Map<string, Set<string>>> {
   const index = await fetchStaticGtfsIndex()
   const url = staticGtfsUrl()
   if (!url || index.source === 'unavailable') return new Map()
-  return cached('nta-static-gtfs-stop-service-index:v2', ttlMs, async () => {
-    const zip = new AdmZip(await readStaticGtfsZip(url))
-    return parseStopServices(zipText(zip, 'stop_times.txt'), index)
+  return cached('nta-static-bus-stop-routes', ttlMs, async () => {
+    const routesByStop = new Map<string, Set<string>>()
+    parseCsvRecords(await readStaticGtfsText(url, 'stop_times.txt'), {
+      columns: true, bom: true, skip_empty_lines: true,
+      on_record(row: Record<string, string>) {
+        const trip = index.tripsById.get(row.trip_id ?? '')
+        if (row.stop_id && trip && isBusRoute(index.routesById.get(trip.routeId)?.routeType)) {
+          const routes = routesByStop.get(row.stop_id) ?? new Set<string>()
+          routes.add(trip.routeId)
+          routesByStop.set(row.stop_id, routes)
+        }
+        return null
+      },
+    })
+    return routesByStop
+  })
+}
+
+async function fetchStaticGtfsStopServiceIndex(stopId: string): Promise<Map<string, StaticGtfsStopService[]>> {
+  const index = await fetchStaticGtfsIndex()
+  const url = staticGtfsUrl()
+  if (!url || index.source === 'unavailable') return new Map()
+  return cached(`nta-static-gtfs-stop-services:${stopId}`, ttlMs, async () => {
+    return parseStopServices(await readStaticGtfsText(url, 'stop_times.txt'), index, stopId)
   })
 }
 
@@ -263,8 +293,7 @@ export async function fetchStaticGtfsShape(shapeId: string): Promise<StaticGtfsS
   const url = staticGtfsUrl()
   if (!url || !shapeId) return []
   return cached(`nta-static-gtfs-shape:${createHash('sha256').update(shapeId).digest('hex').slice(0, 16)}`, ttlMs, async () => {
-    const zip = new AdmZip(await readStaticGtfsZip(url))
-    return parseShapesForShapeId(zipText(zip, 'shapes.txt'), shapeId)
+    return parseShapesForShapeId(await readStaticGtfsText(url, 'shapes.txt'), shapeId)
       .sort((left, right) => left.sequence - right.sequence)
   })
 }
@@ -300,6 +329,11 @@ export function staticGtfsUrl() {
 
 function staticGtfsSource(): StaticGtfsIndex['source'] {
   return process.env.NTA_GTFS_STATIC_URL?.trim() ? 'configured' : 'recommended'
+}
+
+async function readStaticGtfsText(url: string, filename: string): Promise<string> {
+  const key = createHash('sha256').update(`${url}:${filename}`).digest('hex')
+  return cached(`nta-static-gtfs-text:${key}`, ttlMs, async () => zipText(new AdmZip(await readStaticGtfsZip(url)), filename))
 }
 
 async function readStaticGtfsZip(url: string) {
@@ -435,22 +469,16 @@ function parseStopTimesForTrips(text: string, targetTripIds: Set<string>) {
   return stopTimesByTripId
 }
 
-function parseStopServices(text: string, index: StaticGtfsIndex) {
+function parseStopServices(text: string, index: StaticGtfsIndex, targetStopId: string) {
   const byStopId = new Map<string, Map<string, StaticGtfsStopService & { arrivals: Array<{ seconds: number; tripId: string; stopSequence?: number }> }>>()
-  const lines = text.split(/\r?\n/)
-  const headers = lines.shift()?.split(',') ?? []
-  const tripIdIndex = headers.indexOf('trip_id')
-  const arrivalIndex = headers.indexOf('arrival_time')
-  const stopIdIndex = headers.indexOf('stop_id')
-  const stopSequenceIndex = headers.indexOf('stop_sequence')
-  if (tripIdIndex < 0 || arrivalIndex < 0 || stopIdIndex < 0) return new Map<string, StaticGtfsStopService[]>()
-
-  for (const line of lines) {
-    if (!line) continue
-    const columns = line.split(',')
-    const tripId = columns[tripIdIndex]
-    const stopId = columns[stopIdIndex]
-    const arrivalSeconds = parseGtfsTime(columns[arrivalIndex])
+  const rows: Record<string, string>[] = parseCsvRecords(text, {
+    columns: true, bom: true, skip_empty_lines: true,
+    on_record: (row: Record<string, string>) => row.stop_id === targetStopId ? row : null,
+  })
+  for (const row of rows) {
+    const tripId = row.trip_id
+    const stopId = row.stop_id
+    const arrivalSeconds = parseGtfsTime(row.arrival_time)
     if (!tripId || !stopId || arrivalSeconds === undefined) continue
     const trip = index.tripsById.get(tripId)
     if (!trip) continue
@@ -471,7 +499,7 @@ function parseStopServices(text: string, index: StaticGtfsIndex) {
     service.arrivals.push({
       seconds: arrivalSeconds,
       tripId,
-      stopSequence: parseOptionalNumber(columns[stopSequenceIndex]),
+      stopSequence: parseOptionalNumber(row.stop_sequence),
     })
     stopServices.set(key, service)
     byStopId.set(stopId, stopServices)
