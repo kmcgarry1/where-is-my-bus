@@ -1,7 +1,4 @@
-import type {
-  AtlasMovingAssetFeature,
-  AtlasEtaPrediction,
-} from '../movingAsset.types.ts'
+import type { AtlasMovingAssetFeature, AtlasEtaPrediction } from '../movingAsset.types.ts'
 import type { AtlasIncidentFeature } from '../incident.types.ts'
 
 export interface DelayAssessment {
@@ -28,8 +25,7 @@ export function assessDelay(
   if (!Number.isFinite(age) || age > 300)
     return {
       category: 'Position data stale',
-      explanation:
-        'The last location is too old to judge current progress or arrival time.',
+      explanation: 'The last location is too old to judge current progress or arrival time.',
       inferred: false,
     }
   const alert = alerts.find(({ properties: item }) => {
@@ -41,16 +37,11 @@ export function assessDelay(
       return false
     const source = item.sourceProperties
     const includes = (key: string, value?: string) =>
-      Boolean(
-        value && Array.isArray(source[key]) && source[key].includes(value),
-      )
+      Boolean(value && Array.isArray(source[key]) && source[key].includes(value))
     return (
       includes('tripIds', properties.tripId) ||
       includes('routeIds', properties.routeId) ||
-      includes(
-        'stopIds',
-        stopId ?? String(properties.sourceProperties.nextStopId ?? ''),
-      )
+      includes('stopIds', stopId ?? String(properties.sourceProperties.nextStopId ?? ''))
     )
   })
   if (alert)
@@ -59,9 +50,7 @@ export function assessDelay(
       explanation: `${alert.properties.title}${alert.properties.description ? `: ${alert.properties.description}` : ''}`,
       inferred: false,
     }
-  const congestion = String(
-    properties.sourceProperties.congestionLevel ?? '',
-  ).toUpperCase()
+  const congestion = String(properties.sourceProperties.congestionLevel ?? '').toUpperCase()
   if (['CONGESTION', 'SEVERE_CONGESTION'].includes(congestion))
     return {
       category: 'Slow traffic nearby',
@@ -77,11 +66,9 @@ export function assessDelay(
         'Recent movement is slow. The bus may be serving a stop, waiting at lights or in traffic; the cause is not confirmed.',
       inferred: true,
     }
-  const delay =
-    eta?.evidence.providerDelaySeconds ?? properties.scheduleDeviationSeconds
+  const delay = eta?.evidence.providerDelaySeconds ?? properties.scheduleDeviationSeconds
   if (delay !== undefined && delay > 60) {
-    const inferred =
-      properties.sourceProperties.scheduleSource === 'static-gtfs-estimate'
+    const inferred = properties.sourceProperties.scheduleSource === 'static-gtfs-estimate'
     return {
       category: 'Running late',
       explanation: `${inferred ? 'Schedule comparison suggests' : 'The feed reports'} about ${Math.round(delay / 60)} minutes behind schedule. No specific cause is available.`,

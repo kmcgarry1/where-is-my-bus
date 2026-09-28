@@ -30,12 +30,13 @@ export const epaLocationSchema = z.object({
   last_updated: z.string().nullable().optional(),
 })
 
-export const epaListResponseSchema = <T extends z.ZodType>(itemSchema: T) => z.object({
-  count: z.number(),
-  length: z.number(),
-  page: z.number(),
-  list: z.array(itemSchema),
-})
+export const epaListResponseSchema = <T extends z.ZodType>(itemSchema: T) =>
+  z.object({
+    count: z.number(),
+    length: z.number(),
+    page: z.number(),
+    list: z.array(itemSchema),
+  })
 
 export type EpaBathingAlert = z.infer<typeof epaAlertSchema>
 export type EpaBathingLocation = z.infer<typeof epaLocationSchema>

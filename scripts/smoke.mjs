@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
 import { chromium } from 'playwright'
+import { join } from 'node:path'
 
-const url =
-  process.argv[2] ?? process.env.BUSTIME_SMOKE_URL ?? 'http://127.0.0.1:5174/'
+const artifactDirectory = process.env.BUSTIME_ARTIFACT_DIR ?? '.phase0/screenshots'
+await mkdir(artifactDirectory, { recursive: true })
+
+const url = process.argv[2] ?? process.env.BUSTIME_SMOKE_URL ?? 'http://127.0.0.1:5174/'
 const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
 const errors = []
@@ -55,10 +58,13 @@ await page.route('**/api/providers/nta/**', async (route) => {
         bus.geometry.coordinates[1] >= bounds[1] &&
         bus.geometry.coordinates[1] <= bounds[3])
     const vehicles = visible ? [bus] : []
-    if (visible && request.searchParams.has('stopId')) vehicles.push({ ...bus, properties: { ...bus.properties, id: 'unavailable-bus', tripId: 'unavailable-trip' } })
+    if (visible && request.searchParams.has('stopId'))
+      vehicles.push({
+        ...bus,
+        properties: { ...bus.properties, id: 'unavailable-bus', tripId: 'unavailable-trip' },
+      })
     body = { source: 'live', collection: collection(vehicles) }
-  } else if (request.pathname.endsWith('/stops'))
-    body = { collection: collection([stop]) }
+  } else if (request.pathname.endsWith('/stops')) body = { collection: collection([stop]) }
   else if (request.pathname.endsWith('/routes'))
     body = {
       routes: [
@@ -86,8 +92,7 @@ await page.route('**/api/providers/nta/**', async (route) => {
   else if (request.searchParams.get('tripId') === 'unavailable-trip') {
     await route.fulfill({ status: 503, json: { error: 'Trip unavailable' } })
     return
-  }
-  else if (request.pathname.endsWith('/trip-context'))
+  } else if (request.pathname.endsWith('/trip-context'))
     body = {
       context: {
         source: 'configured',
@@ -116,14 +121,10 @@ try {
   await page.getByRole('tab', { name: 'Live buses' }).click()
   await page.locator('.result-row').first().waitFor()
   await page.locator('.result-row').first().click()
-  await page
-    .getByRole('heading', { name: 'What might be delaying it?' })
-    .waitFor()
+  await page.getByRole('heading', { name: 'What might be delaying it?' }).waitFor()
   await page.locator('.eta-number').filter({ hasText: 'min' }).waitFor()
   await page.waitForFunction(
-    () =>
-      window.__busTimeMap?.hasImage('local-bus') &&
-      window.__busTimeMap?.getSource('vehicles'),
+    () => window.__busTimeMap?.hasImage('local-bus') && window.__busTimeMap?.getSource('vehicles'),
   )
   assert.ok(
     await page
@@ -132,9 +133,7 @@ try {
     'map container is visible',
   )
   await page.waitForFunction(
-    () =>
-      window.__busTimeMap?.queryRenderedFeatures({ layers: ['bus-icons'] })
-        .length > 0,
+    () => window.__busTimeMap?.queryRenderedFeatures({ layers: ['bus-icons'] }).length > 0,
   )
   const canvas = await page.evaluate(() => {
     const map = window.__busTimeMap
@@ -142,9 +141,7 @@ try {
     map.triggerRepaint()
     return new Promise((resolve) =>
       map.once('render', () => {
-        const pixels = new Uint8Array(
-          4 * gl.drawingBufferWidth * gl.drawingBufferHeight,
-        )
+        const pixels = new Uint8Array(4 * gl.drawingBufferWidth * gl.drawingBufferHeight)
         const framebuffer = gl.getParameter(gl.FRAMEBUFFER_BINDING)
         gl.bindFramebuffer(gl.FRAMEBUFFER, null)
         gl.readPixels(
@@ -169,14 +166,12 @@ try {
     )
   })
   assert.ok(canvas.colors > 5, `map canvas has varied pixels: ${canvas.colors}`)
-  await mkdir('artifacts', { recursive: true })
+  await mkdir(artifactDirectory, { recursive: true })
   await page.waitForFunction(
-    () =>
-      window.__busTimeMap?.queryRenderedFeatures({ layers: ['bus-icons'] })
-        .length > 0,
+    () => window.__busTimeMap?.queryRenderedFeatures({ layers: ['bus-icons'] }).length > 0,
   )
   await page.waitForTimeout(700)
-  await page.screenshot({ path: 'artifacts/bus-desktop.png', fullPage: true })
+  await page.screenshot({ path: join(artifactDirectory, 'bus-desktop.png'), fullPage: true })
   await page.getByRole('button', { name: 'Back to results' }).click()
   await page.getByRole('tab', { name: 'Stops', exact: true }).click()
   await page.getByRole('searchbox').fill('1234')
@@ -185,9 +180,7 @@ try {
   await page.getByText('Some arrival information is unavailable.', { exact: true }).waitFor()
   await page.locator('.arrival-row').first().click()
   await page.locator('.eta-number').filter({ hasText: 'min' }).waitFor()
-  assert.ok(
-    requests.some((request) => request.includes('/vehicles?stopId=1234')),
-  )
+  assert.ok(requests.some((request) => request.includes('/vehicles?stopId=1234')))
   assert.ok(
     requests
       .filter((request) => request.includes('/stops?'))
@@ -196,33 +189,62 @@ try {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.waitForTimeout(800)
   await page.waitForFunction(() => !window.__busTimeMap?.isMoving())
-  assert.ok(await page.evaluate(() => {
-    const map = window.__busTimeMap
-    const data = map.getSource('selected')._data
-    const selected = (data.geojson ?? data).features[0]
-    const point = map.project(selected.geometry.coordinates)
-    const rect = map.getContainer().getBoundingClientRect()
-    return point.x >= 0 && point.x <= rect.width && point.y >= 0 && point.y <= rect.height
-  }), 'selected bus stays inside the mobile map')
-  await page.screenshot({ path: 'artifacts/bus-mobile.png', fullPage: true })
+  assert.ok(
+    await page.evaluate(() => {
+      const map = window.__busTimeMap
+      const data = map.getSource('selected')._data
+      const selected = (data.geojson ?? data).features[0]
+      const point = map.project(selected.geometry.coordinates)
+      const rect = map.getContainer().getBoundingClientRect()
+      return point.x >= 0 && point.x <= rect.width && point.y >= 0 && point.y <= rect.height
+    }),
+    'selected bus stays inside the mobile map',
+  )
+  await page.screenshot({ path: join(artifactDirectory, 'bus-mobile.png'), fullPage: true })
   assert.equal(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth > innerWidth,
-    ),
+    await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
     false,
     'no mobile horizontal overflow',
   )
-  for (const viewport of [{ width: 320, height: 568 }, { width: 430, height: 932 }, { width: 667, height: 375 }]) {
+  for (const viewport of [
+    { width: 320, height: 568 },
+    { width: 430, height: 932 },
+    { width: 667, height: 375 },
+  ]) {
     await page.setViewportSize(viewport)
     await page.waitForTimeout(250)
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight + 1), false, 'mobile shell fits viewport')
+    assert.equal(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth > innerWidth ||
+          document.documentElement.scrollHeight > innerHeight + 1,
+      ),
+      false,
+      'mobile shell fits viewport',
+    )
     await page.getByRole('button', { name: 'More map space', exact: true }).click()
-    assert.ok(await page.locator('.map-pane').evaluate(element => element.getBoundingClientRect().height > innerHeight * 0.6), 'map can expand')
+    assert.ok(
+      await page
+        .locator('.map-pane')
+        .evaluate((element) => element.getBoundingClientRect().height > innerHeight * 0.6),
+      'map can expand',
+    )
     await page.getByRole('button', { name: 'More detail space', exact: true }).click()
-    assert.equal(await page.locator('.mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group, .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group').isVisible(), false, 'compressed map hides overlapping zoom controls')
+    assert.equal(
+      await page
+        .locator(
+          '.mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group, .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group',
+        )
+        .isVisible(),
+      false,
+      'compressed map hides overlapping zoom controls',
+    )
     await page.locator('.delay-section').scrollIntoViewIfNeeded()
     assert.ok(await page.locator('.delay-section').isVisible(), 'delay details remain reachable')
-    await page.screenshot({ path: `artifacts/mobile-${viewport.width}x${viewport.height}.png`, fullPage: true })
+    await page.screenshot({
+      path: join(artifactDirectory, `mobile-${viewport.width}x${viewport.height}.png`),
+      fullPage: true,
+    })
   }
   await page.setViewportSize({ width: 390, height: 844 })
   await page.getByRole('button', { name: 'Search for another bus or stop', exact: true }).click()
@@ -242,15 +264,10 @@ try {
   )
   await page.getByRole('button', { name: 'Show bus stops' }).click()
   await page.waitForFunction(
-    () =>
-      window.__busTimeMap?.queryRenderedFeatures({ layers: ['stop-icons'] })
-        .length > 0,
+    () => window.__busTimeMap?.queryRenderedFeatures({ layers: ['stop-icons'] }).length > 0,
   )
   assert.ok(
-    requests.some(
-      (request) =>
-        request.includes('/stops?bounds=') && request.includes('limit=200'),
-    ),
+    requests.some((request) => request.includes('/stops?bounds=') && request.includes('limit=200')),
   )
   assert.deepEqual(errors, [])
   console.log(
@@ -259,14 +276,17 @@ try {
         passed: true,
         canvas,
         requests,
-        screenshots: ['artifacts/bus-desktop.png', 'artifacts/bus-mobile.png'],
+        screenshots: [
+          join(artifactDirectory, 'bus-desktop.png'),
+          join(artifactDirectory, 'bus-mobile.png'),
+        ],
       },
       null,
       2,
     ),
   )
 } catch (error) {
-  await page.screenshot({ path: 'artifacts/smoke-failure.png', fullPage: true })
+  await page.screenshot({ path: join(artifactDirectory, 'smoke-failure.png'), fullPage: true })
   console.log(
     await page.evaluate(() => ({
       warning: document.querySelector('.map-warning')?.textContent,

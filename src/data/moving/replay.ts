@@ -33,7 +33,7 @@ const vehicles: ReplayVehicleSeed[] = [
     bearing: 318,
     speed: 8.4,
     points: [
-      [-6.1288, 53.2910],
+      [-6.1288, 53.291],
       [-6.1739, 53.3022],
       [-6.2186, 53.3194],
       [-6.2603, 53.3438],
@@ -54,7 +54,7 @@ const vehicles: ReplayVehicleSeed[] = [
     speed: 6.8,
     points: [
       [-6.3704, 53.2878],
-      [-6.3230, 53.3106],
+      [-6.323, 53.3106],
       [-6.2899, 53.3357],
       [-6.2469, 53.3494],
       [-6.2259, 53.3481],
@@ -76,7 +76,7 @@ const vehicles: ReplayVehicleSeed[] = [
       [-6.2648, 53.4082],
       [-6.2624, 53.3828],
       [-6.2606, 53.3498],
-      [-6.2540, 53.3192],
+      [-6.254, 53.3192],
       [-6.2026, 53.2042],
     ],
   },
@@ -93,10 +93,10 @@ const vehicles: ReplayVehicleSeed[] = [
     bearing: 18,
     speed: 14.2,
     points: [
-      [-6.1135, 53.2550],
+      [-6.1135, 53.255],
       [-6.1235, 53.2936],
-      [-6.1518, 53.3340],
-      [-6.1750, 53.3631],
+      [-6.1518, 53.334],
+      [-6.175, 53.3631],
       [-6.1514, 53.3916],
     ],
   },
@@ -111,7 +111,9 @@ export function recordedMovingReplayBounds() {
 export function recordedMovingCollectionForTime(timestamp: string): AtlasMovingAssetCollection {
   const time = Date.parse(timestamp)
   const bounds = recordedMovingReplayBounds()
-  const bounded = Number.isFinite(time) ? Math.min(Math.max(time, bounds.min), bounds.max) : bounds.max
+  const bounded = Number.isFinite(time)
+    ? Math.min(Math.max(time, bounds.min), bounds.max)
+    : bounds.max
   const frame = (bounded - bounds.min) / replayStepMs
   const lowerIndex = Math.floor(frame)
   const upperIndex = Math.min(lowerIndex + 1, vehicles[0].points.length - 1)
@@ -119,24 +121,31 @@ export function recordedMovingCollectionForTime(timestamp: string): AtlasMovingA
 
   return {
     type: 'FeatureCollection',
-    features: vehicles.map((vehicle) => replayFeature(vehicle, bounds.min, lowerIndex, upperIndex, ratio)),
+    features: vehicles.map((vehicle) =>
+      replayFeature(vehicle, bounds.min, lowerIndex, upperIndex, ratio),
+    ),
   }
 }
 
 export function recordedMovingTrailMap(timestamp: string): Map<string, [number, number][]> {
   const time = Date.parse(timestamp)
   const bounds = recordedMovingReplayBounds()
-  const bounded = Number.isFinite(time) ? Math.min(Math.max(time, bounds.min), bounds.max) : bounds.max
+  const bounded = Number.isFinite(time)
+    ? Math.min(Math.max(time, bounds.min), bounds.max)
+    : bounds.max
   const frame = (bounded - bounds.min) / replayStepMs
   const upperIndex = Math.min(Math.ceil(frame), vehicles[0].points.length - 1)
   const lowerIndex = Math.floor(frame)
   const ratio = upperIndex === lowerIndex ? 0 : frame - lowerIndex
 
-  return new Map(vehicles.map((vehicle) => {
-    const points = vehicle.points.slice(0, upperIndex + 1)
-    if (ratio > 0) points.push(interpolatePoint(vehicle.points[lowerIndex], vehicle.points[upperIndex], ratio))
-    return [replayId(vehicle.id), points.slice(-maxReplayTrailPoints)]
-  }))
+  return new Map(
+    vehicles.map((vehicle) => {
+      const points = vehicle.points.slice(0, upperIndex + 1)
+      if (ratio > 0)
+        points.push(interpolatePoint(vehicle.points[lowerIndex], vehicle.points[upperIndex], ratio))
+      return [replayId(vehicle.id), points.slice(-maxReplayTrailPoints)]
+    }),
+  )
 }
 
 function replayFeature(
@@ -148,7 +157,11 @@ function replayFeature(
 ): AtlasMovingAssetFeature {
   const observedAt = new Date(start + lowerIndex * replayStepMs).toISOString()
   const nextObservationAt = new Date(start + upperIndex * replayStepMs).toISOString()
-  const coordinates = interpolatePoint(vehicle.points[lowerIndex], vehicle.points[upperIndex], ratio)
+  const coordinates = interpolatePoint(
+    vehicle.points[lowerIndex],
+    vehicle.points[upperIndex],
+    ratio,
+  )
   const interpolated = ratio > 0
 
   return {
@@ -175,7 +188,9 @@ function replayFeature(
         staticGtfsSource: 'recorded',
         routeLongName: vehicle.routeName,
         agencyName: vehicle.agencyName,
-        replayTimestamp: new Date(start + lowerIndex * replayStepMs + ratio * replayStepMs).toISOString(),
+        replayTimestamp: new Date(
+          start + lowerIndex * replayStepMs + ratio * replayStepMs,
+        ).toISOString(),
         previousObservationAt: observedAt,
         nextObservationAt,
       },
@@ -183,11 +198,12 @@ function replayFeature(
   }
 }
 
-function interpolatePoint(from: [number, number], to: [number, number], ratio: number): [number, number] {
-  return [
-    from[0] + (to[0] - from[0]) * ratio,
-    from[1] + (to[1] - from[1]) * ratio,
-  ]
+function interpolatePoint(
+  from: [number, number],
+  to: [number, number],
+  ratio: number,
+): [number, number] {
+  return [from[0] + (to[0] - from[0]) * ratio, from[1] + (to[1] - from[1]) * ratio]
 }
 
 function floorToReplayStep(timestamp: number) {

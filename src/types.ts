@@ -77,6 +77,4 @@ export type {
   TelemetryValue,
 } from './data/telemetry.types'
 
-export type {
-  AtlasTimeContext,
-} from './data/time.types'
+export type { AtlasTimeContext } from './data/time.types'

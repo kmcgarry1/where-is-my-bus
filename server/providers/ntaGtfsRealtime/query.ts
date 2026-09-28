@@ -6,23 +6,12 @@ export function parseBounds(value: string | null): Bounds | undefined {
   if (parts.length !== 4 || parts.some((part) => !Number.isFinite(part)))
     throw new Error('bounds must contain west,south,east,north')
   const [west, south, east, north] = parts as Bounds
-  if (
-    west < -180 ||
-    east > 180 ||
-    south < -90 ||
-    north > 90 ||
-    west > east ||
-    south > north
-  )
+  if (west < -180 || east > 180 || south < -90 || north > 90 || west > east || south > north)
     throw new Error('Invalid bounds')
   return [west, south, east, north]
 }
 
-export function insideBounds(
-  longitude: number,
-  latitude: number,
-  bounds?: Bounds,
-): boolean {
+export function insideBounds(longitude: number, latitude: number, bounds?: Bounds): boolean {
   return (
     !bounds ||
     (longitude >= bounds[0] &&
@@ -32,10 +21,7 @@ export function insideBounds(
   )
 }
 
-export function matchesQuery(
-  query: string,
-  values: Array<string | undefined>,
-): boolean {
+export function matchesQuery(query: string, values: Array<string | undefined>): boolean {
   const normalized = values
     .filter(Boolean)
     .join(' ')
@@ -51,13 +37,7 @@ export function matchesQuery(
     .every((word) => normalized.includes(word))
 }
 
-export function queryLimit(
-  value: string | null,
-  fallback = 30,
-  maximum = 200,
-): number {
+export function queryLimit(value: string | null, fallback = 30, maximum = 200): number {
   const parsed = value === null ? fallback : Number(value)
-  return Number.isInteger(parsed) && parsed > 0
-    ? Math.min(parsed, maximum)
-    : fallback
+  return Number.isInteger(parsed) && parsed > 0 ? Math.min(parsed, maximum) : fallback
 }

@@ -54,15 +54,21 @@ const {
   selectRoute,
   selectVehicle,
 } = state
-const selected = computed(
-  () => selectedRoute.value || selectedStop.value || selectedVehicle.value,
-)
+const selected = computed(() => selectedRoute.value || selectedStop.value || selectedVehicle.value)
 const mobileView = ref<'balanced' | 'map' | 'details'>('balanced')
 const mobileSearchOpen = ref(false)
-watch(() => [selectedRoute.value?.routeId, selectedStop.value?.properties.id, selectedVehicle.value?.properties.id].join('|'), () => {
-  mobileView.value = 'balanced'
-  mobileSearchOpen.value = false
-})
+watch(
+  () =>
+    [
+      selectedRoute.value?.routeId,
+      selectedStop.value?.properties.id,
+      selectedVehicle.value?.properties.id,
+    ].join('|'),
+  () => {
+    mobileView.value = 'balanced'
+    mobileSearchOpen.value = false
+  },
+)
 function openMobileSearch() {
   mobileView.value = 'details'
   mobileSearchOpen.value = !mobileSearchOpen.value
@@ -103,9 +109,7 @@ function clock(time?: string) {
 }
 function age(time: string) {
   const seconds = Math.max(0, Math.round((now.value - Date.parse(time)) / 1000))
-  return seconds < 60
-    ? `${seconds}s ago`
-    : `${Math.floor(seconds / 60)} min ago`
+  return seconds < 60 ? `${seconds}s ago` : `${Math.floor(seconds / 60)} min ago`
 }
 const schedule = computed(() => {
   const seconds = selectedVehicle.value?.properties.scheduleDeviationSeconds
@@ -119,7 +123,9 @@ const storedTheme = localStorage.getItem('bustime-theme')
 const theme = ref<'light' | 'dark'>(
   storedTheme === 'light' || storedTheme === 'dark'
     ? storedTheme
-    : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+    : window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light',
 )
 watch(
   theme,
@@ -136,7 +142,11 @@ const userLocation = ref<{ longitude: number; latitude: number } | null>(null)
 const locating = ref(false)
 const locationError = ref('')
 let nearbyRequest = 0
-watch([query, searchMode, selectedArea], () => { nearbyRequest++; locating.value = false; locationError.value = '' })
+watch([query, searchMode, selectedArea], () => {
+  nearbyRequest++
+  locating.value = false
+  locationError.value = ''
+})
 async function searchNearby() {
   changeMode('stops')
   await nextTick()
@@ -144,14 +154,27 @@ async function searchNearby() {
   locating.value = true
   locationError.value = ''
   try {
-    if (!navigator.geolocation) throw new Error('Location is unavailable in this browser. Search by stop name or number instead.')
-    const position = await new Promise<GeolocationPosition>((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { maximumAge: 30000, timeout: 15000, enableHighAccuracy: true }))
+    if (!navigator.geolocation)
+      throw new Error(
+        'Location is unavailable in this browser. Search by stop name or number instead.',
+      )
+    const position = await new Promise<GeolocationPosition>((resolve, reject) =>
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        maximumAge: 30000,
+        timeout: 15000,
+        enableHighAccuracy: true,
+      }),
+    )
     if (request !== nearbyRequest) return
     const { longitude, latitude } = position.coords
     userLocation.value = { longitude, latitude }
     await findNearbyStops(longitude, latitude)
   } catch (cause) {
-    if (request === nearbyRequest) locationError.value = cause instanceof Error ? cause.message : 'Location could not be accessed. Allow location in your browser, or search by stop name or number.'
+    if (request === nearbyRequest)
+      locationError.value =
+        cause instanceof Error
+          ? cause.message
+          : 'Location could not be accessed. Allow location in your browser, or search by stop name or number.'
   } finally {
     if (request === nearbyRequest) locating.value = false
   }
@@ -179,13 +202,24 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main class="app-shell" :class="[`mobile-view-${mobileView}`, { 'has-selection': selected, 'has-vehicle': selectedVehicle, 'mobile-search-open': mobileSearchOpen }]">
+  <main
+    class="app-shell"
+    :class="[
+      `mobile-view-${mobileView}`,
+      {
+        'has-selection': selected,
+        'has-vehicle': selectedVehicle,
+        'mobile-search-open': mobileSearchOpen,
+      },
+    ]"
+  >
     <header class="app-header">
       <a class="brand" href="/"
-        ><span class="brand-icon"><Bus :size="23" /></span
-        ><strong>BusTime</strong><span class="brand-region">Ireland</span></a
-      ><div class="header-actions"
-        ><button
+        ><span class="brand-icon"><Bus :size="23" /></span><strong>BusTime</strong
+        ><span class="brand-region">Ireland</span></a
+      >
+      <div class="header-actions">
+        <button
           class="theme-toggle"
           type="button"
           :title="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
@@ -201,16 +235,41 @@ onUnmounted(() => {
                 ? 'Live bus locations'
                 : 'Bus arrivals & locations'
           }}</span
-        ></div
-      >
+        >
+      </div>
     </header>
     <div class="workspace">
       <aside class="journey-panel" aria-label="Find your bus">
         <div class="mobile-panel-bar">
           <strong>{{ selected ? 'Your journey' : 'Find a bus' }}</strong>
-          <button v-if="selected" class="icon-button" title="Search for another bus or stop" aria-label="Search for another bus or stop" :aria-expanded="mobileSearchOpen" @click="openMobileSearch"><Search :size="20" /></button>
-          <button class="icon-button" title="More map space" aria-label="More map space" :aria-pressed="mobileView === 'map'" @click="mobileView = mobileView === 'map' ? 'balanced' : 'map'"><MapIcon :size="20" /></button>
-          <button class="icon-button" title="More detail space" aria-label="More detail space" :aria-pressed="mobileView === 'details'" @click="mobileView = mobileView === 'details' ? 'balanced' : 'details'"><List :size="20" /></button>
+          <button
+            v-if="selected"
+            class="icon-button"
+            title="Search for another bus or stop"
+            aria-label="Search for another bus or stop"
+            :aria-expanded="mobileSearchOpen"
+            @click="openMobileSearch"
+          >
+            <Search :size="20" />
+          </button>
+          <button
+            class="icon-button"
+            title="More map space"
+            aria-label="More map space"
+            :aria-pressed="mobileView === 'map'"
+            @click="mobileView = mobileView === 'map' ? 'balanced' : 'map'"
+          >
+            <MapIcon :size="20" />
+          </button>
+          <button
+            class="icon-button"
+            title="More detail space"
+            aria-label="More detail space"
+            :aria-pressed="mobileView === 'details'"
+            @click="mobileView = mobileView === 'details' ? 'balanced' : 'details'"
+          >
+            <List :size="20" />
+          </button>
         </div>
         <div class="search-section">
           <h1>Where is my bus?</h1>
@@ -218,11 +277,7 @@ onUnmounted(() => {
           <select id="area" v-model="selectedArea">
             <option value="" disabled>Choose an area</option>
             <option value="ireland">All Ireland</option>
-            <option
-              v-for="region in transportRegions"
-              :key="region.id"
-              :value="region.id"
-            >
+            <option v-for="region in transportRegions" :key="region.id" :value="region.id">
               {{ region.label.replace(' City', '') }}
             </option>
           </select>
@@ -243,43 +298,41 @@ onUnmounted(() => {
               <Search :size="19" /><input
                 v-model="query"
                 :aria-label="
-                  searchMode === 'stops'
-                    ? 'Stop name or number'
-                    : 'Bus route or destination'
+                  searchMode === 'stops' ? 'Stop name or number' : 'Bus route or destination'
                 "
                 :placeholder="
-                  searchMode === 'stops'
-                    ? 'Stop name or number'
-                    : 'Bus route or destination'
+                  searchMode === 'stops' ? 'Stop name or number' : 'Bus route or destination'
                 "
                 type="search"
-              /></div
-          >
-            <button v-if="searchMode === 'stops'" class="text-button nearby-button" :disabled="locating || searching" @click="searchNearby">
-              <LocateFixed :size="18" />{{ locating ? 'Finding nearby stops...' : 'Bus stops near me' }}
+              />
+            </div>
+            <button
+              v-if="searchMode === 'stops'"
+              class="text-button nearby-button"
+              :disabled="locating || searching"
+              @click="searchNearby"
+            >
+              <LocateFixed :size="18" />{{
+                locating ? 'Finding nearby stops...' : 'Bus stops near me'
+              }}
             </button>
             <p v-if="locationError" class="error-state" role="alert">{{ locationError }}</p>
           </template>
         </div>
         <div class="panel-content">
           <p v-if="source === 'fixture'" class="notice">
-            <AlertTriangle :size="18" />Demo locations. Live arrival information
-            is unavailable.
+            <AlertTriangle :size="18" />Demo locations. Live arrival information is unavailable.
           </p>
           <div v-if="error" class="error-state" role="alert">
             <p>{{ error }}</p>
-            <button class="text-button" @click="refresh">
-              <RefreshCw :size="16" />Try again
-            </button>
+            <button class="text-button" @click="refresh"><RefreshCw :size="16" />Try again</button>
           </div>
           <template v-if="selected">
             <button class="back-button" @click="reset">
               <ArrowLeft :size="16" />Back to results
             </button>
             <section v-if="selectedStop" class="stop-heading">
-              <span class="eyebrow"
-                >Stop {{ selectedStop.properties.stopId }}</span
-              >
+              <span class="eyebrow">Stop {{ selectedStop.properties.stopId }}</span>
               <h2>{{ selectedStop.properties.name }}</h2>
             </section>
             <section v-if="selectedVehicle" class="bus-details">
@@ -290,15 +343,12 @@ onUnmounted(() => {
                 <div>
                   <h2>
                     {{
-                      selectedVehicle.properties.sourceProperties
-                        .tripHeadsign || selectedVehicle.properties.name
+                      selectedVehicle.properties.sourceProperties.tripHeadsign ||
+                      selectedVehicle.properties.name
                     }}
                   </h2>
                   <span class="muted"
-                    >Bus
-                    {{
-                      selectedVehicle.properties.vehicleId || 'ID unavailable'
-                    }}</span
+                    >Bus {{ selectedVehicle.properties.vehicleId || 'ID unavailable' }}</span
                   >
                 </div>
               </div>
@@ -308,17 +358,12 @@ onUnmounted(() => {
                     eta?.stopName && !selectedStop
                       ? `Next stop: ${eta.stopName}`
                       : 'Last reported location on map'
-                  }}<small
-                    >Updated
-                    {{ age(selectedVehicle.properties.observedAt) }}</small
-                  ></span
+                  }}<small>Updated {{ age(selectedVehicle.properties.observedAt) }}</small></span
                 >
               </div>
               <div class="arrival-focus">
                 <div class="eyebrow">
-                  <Clock3 :size="16" />{{
-                    selectedStop ? 'To this stop' : 'To next stop'
-                  }}
+                  <Clock3 :size="16" />{{ selectedStop ? 'To this stop' : 'To next stop' }}
                 </div>
                 <strong class="eta-number">{{
                   detailLoading && !eta ? '...' : minutes(eta?.predictedArrival)
@@ -335,18 +380,14 @@ onUnmounted(() => {
                       ? `Expected ${clock(eta.predictedArrival)}`
                       : 'No reliable estimate'
                   }}</span
-                  ><span v-if="eta?.status === 'available'"
-                    >{{ eta.confidence }} confidence</span
-                  >
+                  ><span v-if="eta?.status === 'available'">{{ eta.confidence }} confidence</span>
                 </div>
               </div>
               <p class="schedule-line">{{ schedule }}</p>
               <section v-if="delayAssessment" class="delay-section">
                 <h3>What might be delaying it?</h3>
                 <div class="delay-title">
-                  <AlertTriangle :size="18" /><strong>{{
-                    delayAssessment.category
-                  }}</strong>
+                  <AlertTriangle :size="18" /><strong>{{ delayAssessment.category }}</strong>
                 </div>
                 <p>{{ delayAssessment.explanation }}</p>
                 <span class="evidence-label">{{
@@ -360,11 +401,7 @@ onUnmounted(() => {
               <h3>
                 Next arrivals <span>{{ arrivals.length }}</span>
               </h3>
-              <p
-                v-if="detailLoading && !arrivals.length"
-                class="muted"
-                role="status"
-              >
+              <p v-if="detailLoading && !arrivals.length" class="muted" role="status">
                 Checking arrivals...
               </p>
               <p v-else-if="!arrivals.length" class="empty-copy">
@@ -387,24 +424,18 @@ onUnmounted(() => {
                   arrival.routeShortName || arrival.routeId
                 }}</span
                 ><span class="arrival-destination"
-                  ><strong>{{
-                    arrival.headsign || 'Destination unavailable'
-                  }}</strong
+                  ><strong>{{ arrival.headsign || 'Destination unavailable' }}</strong
                   ><small
                     >{{ clock(arrival.displayArrival) }} ·
                     {{ arrival.confidence }} confidence</small
                   ></span
-                ><span class="arrival-time">{{
-                  minutes(arrival.displayArrival)
-                }}</span>
+                ><span class="arrival-time">{{ minutes(arrival.displayArrival) }}</span>
               </button>
             </section>
             <section v-if="selectedRoute && !selectedVehicle">
               <span class="eyebrow">Route {{ selectedRoute.shortName }}</span>
               <h2>
-                {{
-                  selectedRoute.longName || selectedRoute.headsigns.join(' / ')
-                }}
+                {{ selectedRoute.longName || selectedRoute.headsigns.join(' / ') }}
               </h2>
               <p class="muted">{{ selectedRoute.operator }}</p>
             </section>
@@ -414,7 +445,11 @@ onUnmounted(() => {
           </template>
           <template v-if="!selected && selectedArea && searchMode !== 'live'">
             <div class="section-caption">
-              <h3>{{ nearby ? 'Stops within 1 km' : searchMode === 'stops' ? 'Bus stops' : 'Bus routes' }}</h3>
+              <h3>
+                {{
+                  nearby ? 'Stops within 1 km' : searchMode === 'stops' ? 'Bus stops' : 'Bus routes'
+                }}
+              </h3>
               <span v-if="searching" role="status">Searching...</span>
             </div>
             <p v-if="searchError" class="error-state" role="alert">
@@ -428,7 +463,13 @@ onUnmounted(() => {
             >
               <MapPin :size="19" /><span
                 ><strong>{{ stop.properties.name }}</strong
-                ><small>Stop {{ stop.properties.stopId }}<template v-if="nearby"> · {{ Math.round((nearbyDistances[stop.properties.id] || 0) / 10) * 10 }} m straight-line</template></small></span
+                ><small
+                  >Stop {{ stop.properties.stopId
+                  }}<template v-if="nearby">
+                    · {{ Math.round((nearbyDistances[stop.properties.id] || 0) / 10) * 10 }} m
+                    straight-line</template
+                  ></small
+                ></span
               ><ChevronRight :size="17" />
             </button>
             <button
@@ -437,13 +478,9 @@ onUnmounted(() => {
               class="result-row"
               @click="selectRoute(route)"
             >
-              <span class="route-badge small">{{
-                route.shortName || route.routeId
-              }}</span
+              <span class="route-badge small">{{ route.shortName || route.routeId }}</span
               ><span
-                ><strong>{{
-                  route.longName || route.headsigns.join(' / ')
-                }}</strong
+                ><strong>{{ route.longName || route.headsigns.join(' / ') }}</strong
                 ><small>{{ route.operator }}</small></span
               ><ChevronRight :size="17" />
             </button>
@@ -457,7 +494,11 @@ onUnmounted(() => {
               "
               class="empty-copy"
             >
-              {{ nearby ? 'No bus stops found within 1 km. Search by stop name or number.' : `No matching ${searchMode} found.` }}
+              {{
+                nearby
+                  ? 'No bus stops found within 1 km. Search by stop name or number.'
+                  : `No matching ${searchMode} found.`
+              }}
             </p>
           </template>
           <section
@@ -483,9 +524,7 @@ onUnmounted(() => {
                 <RefreshCw :size="17" :class="{ spinning: loading }" />
               </button>
             </div>
-            <p v-if="loading && !buses.length" role="status" class="muted">
-              Finding buses...
-            </p>
+            <p v-if="loading && !buses.length" role="status" class="muted">Finding buses...</p>
             <p v-else-if="!buses.length && !error" class="empty-copy">
               No buses are reporting in this area.
             </p>
@@ -495,13 +534,10 @@ onUnmounted(() => {
               class="result-row"
               @click="selectVehicle(bus)"
             >
-              <span class="route-badge small">{{
-                bus.properties.routeLabel || 'Bus'
-              }}</span
+              <span class="route-badge small">{{ bus.properties.routeLabel || 'Bus' }}</span
               ><span
                 ><strong>{{
-                  bus.properties.sourceProperties.tripHeadsign ||
-                  bus.properties.name
+                  bus.properties.sourceProperties.tripHeadsign || bus.properties.name
                 }}</strong
                 ><small
                   >{{ bus.properties.nextStopName || 'Location available' }} ·
@@ -516,9 +552,7 @@ onUnmounted(() => {
             selectedArea ? area?.label || 'All Ireland' : 'Ireland'
           }}</span
           ><span v-if="loading">Updating...</span
-          ><span v-else-if="selectedArea"
-            >{{ visibleVehicles.features.length }} buses</span
-          >
+          ><span v-else-if="selectedArea">{{ visibleVehicles.features.length }} buses</span>
         </footer>
       </aside>
       <TransitMap

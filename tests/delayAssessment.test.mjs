@@ -21,28 +21,16 @@ test('matches current service alerts and excludes future or unrelated alerts', (
       sourceProperties: { routeIds: ['route'] },
     },
   }
+  assert.equal(assessDelay(vehicle(), [alert], undefined, now).category, 'Service alert')
   assert.equal(
-    assessDelay(vehicle(), [alert], undefined, now).category,
-    'Service alert',
-  )
-  assert.equal(
-    assessDelay(vehicle({ routeId: 'other' }), [alert], undefined, now)
-      .category,
+    assessDelay(vehicle({ routeId: 'other' }), [alert], undefined, now).category,
     'No clear delay detected',
   )
   alert.properties.startedAt = new Date(now + 1000).toISOString()
-  assert.equal(
-    assessDelay(vehicle(), [alert], undefined, now).category,
-    'No clear delay detected',
-  )
+  assert.equal(assessDelay(vehicle(), [alert], undefined, now).category, 'No clear delay detected')
 })
 test('reports lateness without inventing a cause', () => {
-  const assessment = assessDelay(
-    vehicle({ scheduleDeviationSeconds: 300 }),
-    [],
-    undefined,
-    now,
-  )
+  const assessment = assessDelay(vehicle({ scheduleDeviationSeconds: 300 }), [], undefined, now)
   assert.equal(assessment.category, 'Running late')
   assert.match(assessment.explanation, /No specific cause/)
 })
@@ -63,8 +51,5 @@ test('stationary movement is explicitly inferred', () => {
   assert.equal(assessment.inferred, true)
 })
 test('missing evidence does not imply an on-time guarantee', () => {
-  assert.equal(
-    assessDelay(vehicle(), [], undefined, now).category,
-    'No clear delay detected',
-  )
+  assert.equal(assessDelay(vehicle(), [], undefined, now).category, 'No clear delay detected')
 })

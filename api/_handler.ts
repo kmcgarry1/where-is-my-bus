@@ -7,10 +7,7 @@ import { ntaGtfsRealtimeRoutes } from '../server/providers/ntaGtfsRealtime/route
 // middleware (server/**/routes.ts) never executes in production, so every
 // /api/providers/* and /api/transport/* request 404'd on the deployed site.
 // This catch-all re-wires the same Connect handlers behind a single function.
-const middlewares = [
-  transportRoutes(),
-  ntaGtfsRealtimeRoutes(),
-]
+const middlewares = [transportRoutes(), ntaGtfsRealtimeRoutes()]
 
 export default async function handler(request: IncomingMessage, response: ServerResponse) {
   for (const middleware of middlewares) {

@@ -1,6 +1,9 @@
 import type { AtlasEtaPrediction } from './movingAsset.types'
 
-export async function recordEtaPrediction(prediction: AtlasEtaPrediction, predictorVersion = 'baseline-v1') {
+export async function recordEtaPrediction(
+  prediction: AtlasEtaPrediction,
+  predictorVersion = 'baseline-v1',
+) {
   try {
     const response = await fetch('/api/transport/eta-predictions', {
       method: 'POST',

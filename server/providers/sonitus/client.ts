@@ -14,7 +14,9 @@ export async function fetchSonitusMonitors(): Promise<SonitusMonitor[]> {
 
 export async function fetchSonitusMonitorPage(code: string): Promise<string> {
   return cached(`sonitus:monitor-page:${code}`, 5 * 60 * 1000, async () => {
-    const response = await fetch(`${MONITOR_PAGE_URL}/${encodeURIComponent(code)}`, { headers: authHeaders() })
+    const response = await fetch(`${MONITOR_PAGE_URL}/${encodeURIComponent(code)}`, {
+      headers: authHeaders(),
+    })
     if (!response.ok) throw new Error(`Sonitus monitor page responded ${response.status}`)
     return response.text()
   })

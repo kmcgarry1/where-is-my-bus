@@ -19,21 +19,26 @@ export function updateVehicleTrails(
   return next
 }
 
-export function trailCollectionForVehicle(vehicleId: string | undefined, trails: Map<string, [number, number][]>): AtlasVehicleTrailCollection {
+export function trailCollectionForVehicle(
+  vehicleId: string | undefined,
+  trails: Map<string, [number, number][]>,
+): AtlasVehicleTrailCollection {
   if (!vehicleId) return { type: 'FeatureCollection', features: [] }
   const coordinates = trails.get(vehicleId) ?? []
   if (coordinates.length < 2) return { type: 'FeatureCollection', features: [] }
   return {
     type: 'FeatureCollection',
-    features: [{
-      type: 'Feature',
-      id: `trail:${vehicleId}`,
-      geometry: { type: 'LineString', coordinates },
-      properties: {
+    features: [
+      {
+        type: 'Feature',
         id: `trail:${vehicleId}`,
-        vehicleId,
-        provider: 'nta-gtfs-realtime',
+        geometry: { type: 'LineString', coordinates },
+        properties: {
+          id: `trail:${vehicleId}`,
+          vehicleId,
+          provider: 'nta-gtfs-realtime',
+        },
       },
-    }],
+    ],
   }
 }

@@ -20,10 +20,7 @@ test('static search scope follows bus route-stop membership in every city', asyn
     lon: (area.west + area.east) / 2,
     lat: (area.south + area.north) / 2,
   }))
-  zip.addFile(
-    'agency.txt',
-    Buffer.from('agency_id,agency_name\na,Test operator\n'),
-  )
+  zip.addFile('agency.txt', Buffer.from('agency_id,agency_name\na,Test operator\n'))
   zip.addFile(
     'routes.txt',
     Buffer.from(
@@ -36,9 +33,7 @@ test('static search scope follows bus route-stop membership in every city', asyn
     'trips.txt',
     Buffer.from(
       'route_id,trip_id,trip_headsign\n' +
-        rows
-          .map((row) => `${row.id},trip${row.id},Destination ${row.id}`)
-          .join('\n') +
+        rows.map((row) => `${row.id},trip${row.id},Destination ${row.id}`).join('\n') +
         '\nrail,railtrip,Rail station\n',
     ),
   )
@@ -46,9 +41,7 @@ test('static search scope follows bus route-stop membership in every city', asyn
     'stops.txt',
     Buffer.from(
       'stop_id,stop_name,stop_lat,stop_lon\n' +
-        rows
-          .map((row) => `${row.id},Stop ${row.id},${row.lat},${row.lon}`)
-          .join('\n') +
+        rows.map((row) => `${row.id},Stop ${row.id},${row.lat},${row.lon}`).join('\n') +
         '\nrailstop,Rail station,53.35,-6.26\n',
     ),
   )
@@ -56,18 +49,14 @@ test('static search scope follows bus route-stop membership in every city', asyn
     'stop_times.txt',
     Buffer.from(
       'trip_id,stop_id,arrival_time,departure_time,stop_sequence\n' +
-        rows
-          .map((row) => `trip${row.id},${row.id},12:00:00,12:00:00,1`)
-          .join('\n') +
+        rows.map((row) => `trip${row.id},${row.id},12:00:00,12:00:00,1`).join('\n') +
         '\nrailtrip,railstop,12:00:00,12:00:00,1\n',
     ),
   )
   const server = createServer((_, response) => response.end(zip.toBuffer()))
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
   process.env.NTA_GTFS_STATIC_URL = `http://127.0.0.1:${server.address().port}/gtfs.zip`
-  process.env.ATLASOPS_CACHE_DIR = await mkdtemp(
-    join(tmpdir(), 'bustime-static-test-'),
-  )
+  process.env.ATLASOPS_CACHE_DIR = await mkdtemp(join(tmpdir(), 'bustime-static-test-'))
   try {
     assert.equal((await fetchStaticGtfsRouteOptions()).routes.length, 5)
     for (const [index, area] of transportRegions.entries()) {
@@ -88,18 +77,16 @@ test('static search scope follows bus route-stop membership in every city', asyn
       5,
       'rail-only stops are excluded',
     )
-    assert.deepEqual(
-      (await fetchStaticGtfsStopServices('railstop')).services,
-      [],
-    )
-    assert.equal(
-      (await fetchStaticGtfsStopServices('0')).services[0].routeId,
-      '0',
-    )
+    assert.deepEqual((await fetchStaticGtfsStopServices('railstop')).services, [])
+    assert.equal((await fetchStaticGtfsStopServices('0')).services[0].routeId, '0')
     assert.deepEqual((await fetchStaticGtfsStopServices('0')).services[0].tripIds, ['trip0'])
     const batch = await fetchStaticGtfsStopTimes(['trip0', 'trip1'])
     const selected = await fetchStaticGtfsStopTimes(['trip0'])
-    assert.equal(selected.get('trip0'), batch.get('trip0'), 'selected-trip detail reuses prepared stop timings')
+    assert.equal(
+      selected.get('trip0'),
+      batch.get('trip0'),
+      'selected-trip detail reuses prepared stop timings',
+    )
   } finally {
     await new Promise((resolve) => server.close(resolve))
   }

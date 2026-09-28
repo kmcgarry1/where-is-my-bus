@@ -53,7 +53,10 @@ export function predictArrivalAtStop(context: EtaPredictionContext): AtlasEtaPre
   const vehicleId = vehicle.properties.vehicleId ?? vehicle.properties.id
   const tripId = vehicle.properties.tripId
   const positionAgeSeconds = secondsBetween(vehicle.properties.observedAt, calculatedAt)
-  const unavailable = (reason: string, method: AtlasEtaPredictionMethod = 'unavailable'): AtlasEtaPrediction => ({
+  const unavailable = (
+    reason: string,
+    method: AtlasEtaPredictionMethod = 'unavailable',
+  ): AtlasEtaPrediction => ({
     status: 'unavailable',
     vehicleId,
     tripId,
@@ -77,7 +80,8 @@ export function predictArrivalAtStop(context: EtaPredictionContext): AtlasEtaPre
 
   const shape = shapeSegments(tripContext)
   const vehicleProjection = projectToShape(vehicle.geometry.coordinates as [number, number], shape)
-  if (!vehicleProjection) return scheduleOnlyPrediction(context, 'Vehicle could not be projected onto route shape.')
+  if (!vehicleProjection)
+    return scheduleOnlyPrediction(context, 'Vehicle could not be projected onto route shape.')
 
   const stopProgress = sequenceStopProgress(tripContext.stops, shape)
   const nextStop = context.targetStopId
@@ -85,24 +89,51 @@ export function predictArrivalAtStop(context: EtaPredictionContext): AtlasEtaPre
     : determineNextStop(vehicle, stopProgress, vehicleProjection.progressMeters)
   if (!nextStop) return unavailable('No scheduled stop remains ahead of the vehicle.')
 
-  const distanceRemainingMeters = Math.max(0, nextStop.progressMeters - vehicleProjection.progressMeters)
-  const scheduleBaseline = scheduledRemainingSeconds(vehicle, nextStop, stopProgress, vehicleProjection.progressMeters, calculatedAt)
+  const distanceRemainingMeters = Math.max(
+    0,
+    nextStop.progressMeters - vehicleProjection.progressMeters,
+  )
+  const scheduleBaseline = scheduledRemainingSeconds(
+    vehicle,
+    nextStop,
+    stopProgress,
+    vehicleProjection.progressMeters,
+    calculatedAt,
+  )
   const providerArrival = providerArrivalTime(vehicle, nextStop.stop, calculatedAt)
-  const providerDelaySeconds = numericSourceValue(vehicle, 'scheduleDeviationSeconds') ?? vehicle.properties.scheduleDeviationSeconds
+  const providerDelaySeconds =
+    numericSourceValue(vehicle, 'scheduleDeviationSeconds') ??
+    vehicle.properties.scheduleDeviationSeconds
   const speed = recentProgressSpeedMps(context.recentPositions, shape)
-  const currentSpeed = typeof vehicle.properties.speed === 'number' && vehicle.properties.speed >= minimumUsefulSpeedMps && vehicle.properties.speed <= maxUsefulSpeedMps
-    ? vehicle.properties.speed
-    : undefined
+  const currentSpeed =
+    typeof vehicle.properties.speed === 'number' &&
+    vehicle.properties.speed >= minimumUsefulSpeedMps &&
+    vehicle.properties.speed <= maxUsefulSpeedMps
+      ? vehicle.properties.speed
+      : undefined
   const effectiveSpeed = speed ?? currentSpeed
-  const movementEstimateSeconds = effectiveSpeed ? distanceRemainingMeters / effectiveSpeed : undefined
-  const estimatedTravelSeconds = blendedTravelSeconds(movementEstimateSeconds, scheduleBaseline?.remainingSeconds, context.recentPositions.length)
+  const movementEstimateSeconds = effectiveSpeed
+    ? distanceRemainingMeters / effectiveSpeed
+    : undefined
+  const estimatedTravelSeconds = blendedTravelSeconds(
+    movementEstimateSeconds,
+    scheduleBaseline?.remainingSeconds,
+    context.recentPositions.length,
+  )
 
   if (estimatedTravelSeconds === undefined || !Number.isFinite(estimatedTravelSeconds)) {
-    if (providerArrival) return scheduleOnlyPrediction(context, 'Movement estimate unavailable; using provider TripUpdate arrival.', 'provider-trip-update')
+    if (providerArrival)
+      return scheduleOnlyPrediction(
+        context,
+        'Movement estimate unavailable; using provider TripUpdate arrival.',
+        'provider-trip-update',
+      )
     return scheduleOnlyPrediction(context, 'Movement and schedule estimates are unavailable.')
   }
 
-  const predictedArrival = new Date(Date.parse(calculatedAt) + Math.max(0, estimatedTravelSeconds) * 1000).toISOString()
+  const predictedArrival = new Date(
+    Date.parse(calculatedAt) + Math.max(0, estimatedTravelSeconds) * 1000,
+  ).toISOString()
   const scheduledArrival = scheduleBaseline?.scheduledArrival
   const confidence = confidenceFor({
     positionAgeSeconds,
@@ -125,7 +156,9 @@ export function predictArrivalAtStop(context: EtaPredictionContext): AtlasEtaPre
     providerArrival,
     distanceRemainingMeters: Math.round(distanceRemainingMeters),
     estimatedTravelSeconds: Math.round(estimatedTravelSeconds),
-    scheduleDeviationSeconds: scheduledArrival ? Math.round((Date.parse(predictedArrival) - Date.parse(scheduledArrival)) / 1000) : undefined,
+    scheduleDeviationSeconds: scheduledArrival
+      ? Math.round((Date.parse(predictedArrival) - Date.parse(scheduledArrival)) / 1000)
+      : undefined,
     confidence,
     calculatedAt,
     method: 'route-progress-blend',
@@ -143,27 +176,43 @@ export function predictArrivalAtStop(context: EtaPredictionContext): AtlasEtaPre
       nextStopProgressMeters: Math.round(nextStop.progressMeters),
       shapeMatchDistanceMeters: Math.round(vehicleProjection.distanceMeters),
     },
-    remainingRoute: remainingRouteFeature(vehicle.properties.id, vehicleProjection.progressMeters, nextStop.progressMeters, shape),
+    remainingRoute: remainingRouteFeature(
+      vehicle.properties.id,
+      vehicleProjection.progressMeters,
+      nextStop.progressMeters,
+      shape,
+    ),
     routeFeature: routeFeature(vehicle, tripContext),
     routeStops: routeStopCollection(tripContext, nextStop.stop.stopId),
     nextStopFeature: stopFeature(nextStop.stop),
   }
 }
 
-function scheduleOnlyPrediction(context: EtaPredictionContext, reason: string, method: AtlasEtaPredictionMethod = 'schedule-baseline'): AtlasEtaPrediction {
+function scheduleOnlyPrediction(
+  context: EtaPredictionContext,
+  reason: string,
+  method: AtlasEtaPredictionMethod = 'schedule-baseline',
+): AtlasEtaPrediction {
   const { vehicle, tripContext, now } = context
   const calculatedAt = new Date(now).toISOString()
   const vehicleId = vehicle.properties.vehicleId ?? vehicle.properties.id
   const stop = nextStopFromSequence(vehicle, tripContext?.stops ?? [])
   const providerArrival = stop ? providerArrivalTime(vehicle, stop, calculatedAt) : undefined
-  const scheduledArrival = stop?.arrivalSeconds !== undefined ? serviceDayIso(calculatedAt, stop.arrivalSeconds) : undefined
-  const providerDelaySeconds = numericSourceValue(vehicle, 'scheduleDeviationSeconds') ?? vehicle.properties.scheduleDeviationSeconds
-  const predictedArrival = providerArrival ?? (
-    scheduledArrival && providerDelaySeconds !== undefined
+  const scheduledArrival =
+    stop?.arrivalSeconds !== undefined
+      ? serviceDayIso(calculatedAt, stop.arrivalSeconds)
+      : undefined
+  const providerDelaySeconds =
+    numericSourceValue(vehicle, 'scheduleDeviationSeconds') ??
+    vehicle.properties.scheduleDeviationSeconds
+  const predictedArrival =
+    providerArrival ??
+    (scheduledArrival && providerDelaySeconds !== undefined
       ? new Date(Date.parse(scheduledArrival) + providerDelaySeconds * 1000).toISOString()
-      : scheduledArrival
-  )
-  const estimatedTravelSeconds = predictedArrival ? Math.max(0, (Date.parse(predictedArrival) - Date.parse(calculatedAt)) / 1000) : undefined
+      : scheduledArrival)
+  const estimatedTravelSeconds = predictedArrival
+    ? Math.max(0, (Date.parse(predictedArrival) - Date.parse(calculatedAt)) / 1000)
+    : undefined
   return {
     status: predictedArrival && stop ? 'available' : 'unavailable',
     vehicleId,
@@ -175,8 +224,12 @@ function scheduleOnlyPrediction(context: EtaPredictionContext, reason: string, m
     scheduledArrival,
     providerArrival,
     distanceRemainingMeters: undefined,
-    estimatedTravelSeconds: estimatedTravelSeconds === undefined ? undefined : Math.round(estimatedTravelSeconds),
-    scheduleDeviationSeconds: scheduledArrival && predictedArrival ? Math.round((Date.parse(predictedArrival) - Date.parse(scheduledArrival)) / 1000) : undefined,
+    estimatedTravelSeconds:
+      estimatedTravelSeconds === undefined ? undefined : Math.round(estimatedTravelSeconds),
+    scheduleDeviationSeconds:
+      scheduledArrival && predictedArrival
+        ? Math.round((Date.parse(predictedArrival) - Date.parse(scheduledArrival)) / 1000)
+        : undefined,
     confidence: predictedArrival ? 'low' : 'low',
     calculatedAt,
     method: providerArrival ? 'provider-trip-update' : method,
@@ -188,12 +241,17 @@ function scheduleOnlyPrediction(context: EtaPredictionContext, reason: string, m
       reason,
     },
     nextStopFeature: stopFeature(stop),
-    routeStops: context.tripContext ? routeStopCollection(context.tripContext, stop?.stopId) : undefined,
+    routeStops: context.tripContext
+      ? routeStopCollection(context.tripContext, stop?.stopId)
+      : undefined,
   }
 }
 
 function shapeSegments(tripContext: AtlasTripContext) {
-  const coordinates = tripContext.shape.map((point): [number, number] => [point.longitude, point.latitude])
+  const coordinates = tripContext.shape.map((point): [number, number] => [
+    point.longitude,
+    point.latitude,
+  ])
   const segments: ShapeSegment[] = []
   let progress = 0
   for (let index = 0; index < coordinates.length - 1; index += 1) {
@@ -206,18 +264,26 @@ function shapeSegments(tripContext: AtlasTripContext) {
   return segments
 }
 
-function projectToShape(coordinates: [number, number], segments: ShapeSegment[], minimumProgressMeters = 0): ProjectedPoint | undefined {
+function projectToShape(
+  coordinates: [number, number],
+  segments: ShapeSegment[],
+  minimumProgressMeters = 0,
+): ProjectedPoint | undefined {
   let best: ProjectedPoint | undefined
   for (let index = 0; index < segments.length; index += 1) {
     const segment = segments[index]
     if (segment.endMeters + 5 < minimumProgressMeters) continue
     const projected = projectToSegment(coordinates, segment)
-    if (!best || projected.distanceMeters < best.distanceMeters) best = { ...projected, segmentIndex: index }
+    if (!best || projected.distanceMeters < best.distanceMeters)
+      best = { ...projected, segmentIndex: index }
   }
   return best
 }
 
-function projectToSegment(point: [number, number], segment: ShapeSegment): Omit<ProjectedPoint, 'segmentIndex'> {
+function projectToSegment(
+  point: [number, number],
+  segment: ShapeSegment,
+): Omit<ProjectedPoint, 'segmentIndex'> {
   const meanLatitude = degreesToRadians((point[1] + segment.start[1] + segment.end[1]) / 3)
   const metersPerDegreeLatitude = 111_320
   const metersPerDegreeLongitude = Math.cos(meanLatitude) * 111_320
@@ -228,7 +294,10 @@ function projectToSegment(point: [number, number], segment: ShapeSegment): Omit<
   const ex = (segment.end[0] - segment.start[0]) * metersPerDegreeLongitude
   const ey = (segment.end[1] - segment.start[1]) * metersPerDegreeLatitude
   const lengthSquared = (ex - sx) ** 2 + (ey - sy) ** 2
-  const ratio = lengthSquared === 0 ? 0 : Math.max(0, Math.min(1, ((px - sx) * (ex - sx) + (py - sy) * (ey - sy)) / lengthSquared))
+  const ratio =
+    lengthSquared === 0
+      ? 0
+      : Math.max(0, Math.min(1, ((px - sx) * (ex - sx) + (py - sy) * (ey - sy)) / lengthSquared))
   const longitude = segment.start[0] + (segment.end[0] - segment.start[0]) * ratio
   const latitude = segment.start[1] + (segment.end[1] - segment.start[1]) * ratio
   return {
@@ -238,13 +307,22 @@ function projectToSegment(point: [number, number], segment: ShapeSegment): Omit<
   }
 }
 
-function sequenceStopProgress(stops: AtlasTripContextStop[], segments: ShapeSegment[]): StopWithProgress[] {
-  const ordered = [...stops].sort((left, right) => (left.stopSequence ?? 0) - (right.stopSequence ?? 0))
+function sequenceStopProgress(
+  stops: AtlasTripContextStop[],
+  segments: ShapeSegment[],
+): StopWithProgress[] {
+  const ordered = [...stops].sort(
+    (left, right) => (left.stopSequence ?? 0) - (right.stopSequence ?? 0),
+  )
   const projected: StopWithProgress[] = []
   let minimumProgressMeters = 0
   for (const stop of ordered) {
     if (stop.latitude === undefined || stop.longitude === undefined) continue
-    const projection = projectToShape([stop.longitude, stop.latitude], segments, Math.max(0, minimumProgressMeters - 80))
+    const projection = projectToShape(
+      [stop.longitude, stop.latitude],
+      segments,
+      Math.max(0, minimumProgressMeters - 80),
+    )
     if (!projection) continue
     projected.push({ stop, progressMeters: projection.progressMeters })
     minimumProgressMeters = Math.max(minimumProgressMeters, projection.progressMeters)
@@ -252,16 +330,33 @@ function sequenceStopProgress(stops: AtlasTripContextStop[], segments: ShapeSegm
   return projected
 }
 
-function determineNextStop(vehicle: AtlasMovingAssetFeature, stops: StopWithProgress[], vehicleProgressMeters: number) {
+function determineNextStop(
+  vehicle: AtlasMovingAssetFeature,
+  stops: StopWithProgress[],
+  vehicleProgressMeters: number,
+) {
   const providerNextStopId = stringSourceValue(vehicle, 'nextStopId')
-  const providerStop = providerNextStopId ? stops.find((item) => item.stop.stopId === providerNextStopId) : undefined
-  if (providerStop && providerStop.progressMeters >= vehicleProgressMeters - stopPassedToleranceMeters) return providerStop
-  return stops.find((item) => item.progressMeters > vehicleProgressMeters + stopPassedToleranceMeters)
+  const providerStop = providerNextStopId
+    ? stops.find((item) => item.stop.stopId === providerNextStopId)
+    : undefined
+  if (
+    providerStop &&
+    providerStop.progressMeters >= vehicleProgressMeters - stopPassedToleranceMeters
+  )
+    return providerStop
+  return stops.find(
+    (item) => item.progressMeters > vehicleProgressMeters + stopPassedToleranceMeters,
+  )
 }
 
-function targetStopFromProgress(stopId: string, stops: StopWithProgress[], vehicleProgressMeters: number) {
+function targetStopFromProgress(
+  stopId: string,
+  stops: StopWithProgress[],
+  vehicleProgressMeters: number,
+) {
   const stop = stops.find((item) => item.stop.stopId === stopId)
-  if (!stop || stop.progressMeters <= vehicleProgressMeters + stopPassedToleranceMeters) return undefined
+  if (!stop || stop.progressMeters <= vehicleProgressMeters + stopPassedToleranceMeters)
+    return undefined
   return stop
 }
 
@@ -272,20 +367,31 @@ function nextStopFromSequence(vehicle: AtlasMovingAssetFeature, stops: AtlasTrip
     if (providerStop) return providerStop
   }
   const currentSequence = numericSourceValue(vehicle, 'currentStopSequence')
-  const ordered = [...stops].sort((left, right) => (left.stopSequence ?? 0) - (right.stopSequence ?? 0))
+  const ordered = [...stops].sort(
+    (left, right) => (left.stopSequence ?? 0) - (right.stopSequence ?? 0),
+  )
   return currentSequence === undefined
     ? ordered[0]
-    : ordered.find((stop) => (stop.stopSequence ?? 0) >= currentSequence) ?? ordered.find((stop) => (stop.stopSequence ?? 0) > currentSequence)
+    : (ordered.find((stop) => (stop.stopSequence ?? 0) >= currentSequence) ??
+        ordered.find((stop) => (stop.stopSequence ?? 0) > currentSequence))
 }
 
-function recentProgressSpeedMps(observations: AtlasVehiclePositionObservation[], segments: ShapeSegment[]) {
+function recentProgressSpeedMps(
+  observations: AtlasVehiclePositionObservation[],
+  segments: ShapeSegment[],
+) {
   const useful = observations
     .map((observation) => ({
       ...observation,
       observedMs: Date.parse(observation.observedAt),
-      progressMeters: observation.shapeProgressMeters ?? projectToShape([observation.longitude, observation.latitude], segments)?.progressMeters,
+      progressMeters:
+        observation.shapeProgressMeters ??
+        projectToShape([observation.longitude, observation.latitude], segments)?.progressMeters,
     }))
-    .filter((observation) => Number.isFinite(observation.observedMs) && observation.progressMeters !== undefined)
+    .filter(
+      (observation) =>
+        Number.isFinite(observation.observedMs) && observation.progressMeters !== undefined,
+    )
     .sort((left, right) => left.observedMs - right.observedMs)
   const speeds: number[] = []
   for (let index = 1; index < useful.length; index += 1) {
@@ -309,9 +415,17 @@ function scheduledRemainingSeconds(
 ) {
   if (nextStop.stop.arrivalSeconds === undefined) return undefined
   const scheduledArrival = serviceDayIso(now, nextStop.stop.arrivalSeconds)
-  const providerDelaySeconds = numericSourceValue(vehicle, 'scheduleDeviationSeconds') ?? vehicle.properties.scheduleDeviationSeconds ?? 0
-  const scheduledRemainingByClock = Math.max(0, (Date.parse(scheduledArrival) + providerDelaySeconds * 1000 - Date.parse(now)) / 1000)
-  const previous = [...stops].reverse().find((item) => item.progressMeters <= vehicleProgressMeters + stopPassedToleranceMeters)
+  const providerDelaySeconds =
+    numericSourceValue(vehicle, 'scheduleDeviationSeconds') ??
+    vehicle.properties.scheduleDeviationSeconds ??
+    0
+  const scheduledRemainingByClock = Math.max(
+    0,
+    (Date.parse(scheduledArrival) + providerDelaySeconds * 1000 - Date.parse(now)) / 1000,
+  )
+  const previous = [...stops]
+    .reverse()
+    .find((item) => item.progressMeters <= vehicleProgressMeters + stopPassedToleranceMeters)
   const previousDeparture = previous?.stop.departureSeconds ?? previous?.stop.arrivalSeconds
   if (!previous || previousDeparture === undefined) {
     return {
@@ -322,34 +436,56 @@ function scheduledRemainingSeconds(
   }
   const segmentSeconds = normalizePositiveSeconds(nextStop.stop.arrivalSeconds - previousDeparture)
   const segmentMeters = Math.max(1, nextStop.progressMeters - previous.progressMeters)
-  const remainingFraction = Math.max(0, Math.min(1, (nextStop.progressMeters - vehicleProgressMeters) / segmentMeters))
+  const remainingFraction = Math.max(
+    0,
+    Math.min(1, (nextStop.progressMeters - vehicleProgressMeters) / segmentMeters),
+  )
   const remainingSeconds = Math.max(0, segmentSeconds * remainingFraction + providerDelaySeconds)
   return {
     scheduledArrival,
-    remainingSeconds: Number.isFinite(remainingSeconds) ? remainingSeconds : scheduledRemainingByClock,
+    remainingSeconds: Number.isFinite(remainingSeconds)
+      ? remainingSeconds
+      : scheduledRemainingByClock,
     segmentSeconds,
   }
 }
 
-function blendedTravelSeconds(movementEstimateSeconds: number | undefined, scheduleRemainingSeconds: number | undefined, observationCount: number) {
+function blendedTravelSeconds(
+  movementEstimateSeconds: number | undefined,
+  scheduleRemainingSeconds: number | undefined,
+  observationCount: number,
+) {
   if (movementEstimateSeconds !== undefined && scheduleRemainingSeconds !== undefined) {
     const movementWeight = observationCount >= 4 ? 0.7 : observationCount >= 2 ? 0.55 : 0.35
-    return movementEstimateSeconds * movementWeight + scheduleRemainingSeconds * (1 - movementWeight)
+    return (
+      movementEstimateSeconds * movementWeight + scheduleRemainingSeconds * (1 - movementWeight)
+    )
   }
   if (movementEstimateSeconds !== undefined) return movementEstimateSeconds
   if (scheduleRemainingSeconds !== undefined) return scheduleRemainingSeconds
   return undefined
 }
 
-function providerArrivalTime(vehicle: AtlasMovingAssetFeature, stop: AtlasTripContextStop, now: string) {
+function providerArrivalTime(
+  vehicle: AtlasMovingAssetFeature,
+  stop: AtlasTripContextStop,
+  now: string,
+) {
   const explicit = stringSourceValue(vehicle, 'providerArrival')
   if (explicit) return explicit
-  const delay = numericSourceValue(vehicle, 'scheduleDeviationSeconds') ?? vehicle.properties.scheduleDeviationSeconds
+  const delay =
+    numericSourceValue(vehicle, 'scheduleDeviationSeconds') ??
+    vehicle.properties.scheduleDeviationSeconds
   if (delay === undefined || stop.arrivalSeconds === undefined) return undefined
   return new Date(Date.parse(serviceDayIso(now, stop.arrivalSeconds)) + delay * 1000).toISOString()
 }
 
-function remainingRouteFeature(vehicleId: string, fromMeters: number, toMeters: number, segments: ShapeSegment[]): AtlasEtaPrediction['remainingRoute'] {
+function remainingRouteFeature(
+  vehicleId: string,
+  fromMeters: number,
+  toMeters: number,
+  segments: ShapeSegment[],
+): AtlasEtaPrediction['remainingRoute'] {
   const coordinates = coordinatesBetweenProgress(fromMeters, toMeters, segments)
   if (coordinates.length < 2) return undefined
   return {
@@ -360,8 +496,14 @@ function remainingRouteFeature(vehicleId: string, fromMeters: number, toMeters: 
   }
 }
 
-function routeFeature(vehicle: AtlasMovingAssetFeature, tripContext: AtlasTripContext): AtlasEtaPrediction['routeFeature'] {
-  const coordinates = tripContext.shape.map((point): [number, number] => [point.longitude, point.latitude])
+function routeFeature(
+  vehicle: AtlasMovingAssetFeature,
+  tripContext: AtlasTripContext,
+): AtlasEtaPrediction['routeFeature'] {
+  const coordinates = tripContext.shape.map((point): [number, number] => [
+    point.longitude,
+    point.latitude,
+  ])
   if (coordinates.length < 2) return undefined
   return {
     type: 'Feature',
@@ -376,44 +518,76 @@ function routeFeature(vehicle: AtlasMovingAssetFeature, tripContext: AtlasTripCo
   }
 }
 
-function routeStopCollection(tripContext: AtlasTripContext, nextStopId?: string): AtlasEtaPrediction['routeStops'] {
+function routeStopCollection(
+  tripContext: AtlasTripContext,
+  nextStopId?: string,
+): AtlasEtaPrediction['routeStops'] {
   return {
     type: 'FeatureCollection',
     features: tripContext.stops.flatMap((stop): AtlasTransitStopFeature[] => {
       if (stop.latitude === undefined || stop.longitude === undefined) return []
       const id = `nta-stop:${stop.stopId}`
-      return [{
-        type: 'Feature',
-        id,
-        geometry: { type: 'Point', coordinates: [stop.longitude, stop.latitude] },
-        properties: {
+      return [
+        {
+          type: 'Feature',
           id,
-          provider: 'nta-gtfs-realtime',
-          providerName: 'NTA GTFS Static',
-          stopId: stop.stopId,
-          name: stop.name ?? `Stop ${stop.stopId}`,
-          routeStopRole: stop.stopId === nextStopId ? 'next-stop' : 'ordinary',
-          directionId: tripContext.trip?.directionId === '0' || tripContext.trip?.directionId === '1' ? tripContext.trip.directionId : undefined,
-          directionLabel: tripContext.trip?.headsign ? `To ${tripContext.trip.headsign}` : directionLabel(tripContext),
-          sourceProperties: {
-            source: 'selected-route',
-            stopSequence: stop.stopSequence,
-            scheduledArrival: stop.arrivalSeconds,
-            scheduledDeparture: stop.departureSeconds,
-            nextStop: stop.stopId === nextStopId,
+          geometry: { type: 'Point', coordinates: [stop.longitude, stop.latitude] },
+          properties: {
+            id,
+            provider: 'nta-gtfs-realtime',
+            providerName: 'NTA GTFS Static',
+            stopId: stop.stopId,
+            name: stop.name ?? `Stop ${stop.stopId}`,
+            routeStopRole: stop.stopId === nextStopId ? 'next-stop' : 'ordinary',
+            directionId:
+              tripContext.trip?.directionId === '0' || tripContext.trip?.directionId === '1'
+                ? tripContext.trip.directionId
+                : undefined,
+            directionLabel: tripContext.trip?.headsign
+              ? `To ${tripContext.trip.headsign}`
+              : directionLabel(tripContext),
+            sourceProperties: {
+              source: 'selected-route',
+              stopSequence: stop.stopSequence,
+              scheduledArrival: stop.arrivalSeconds,
+              scheduledDeparture: stop.departureSeconds,
+              nextStop: stop.stopId === nextStopId,
+            },
           },
         },
-      }]
+      ]
     }),
   }
 }
 
-function coordinatesBetweenProgress(fromMeters: number, toMeters: number, segments: ShapeSegment[]) {
+function coordinatesBetweenProgress(
+  fromMeters: number,
+  toMeters: number,
+  segments: ShapeSegment[],
+) {
   const coordinates: [number, number][] = []
   for (const segment of segments) {
     if (segment.endMeters < fromMeters || segment.startMeters > toMeters) continue
-    const startRatio = segment.endMeters === segment.startMeters ? 0 : Math.max(0, Math.min(1, (fromMeters - segment.startMeters) / (segment.endMeters - segment.startMeters)))
-    const endRatio = segment.endMeters === segment.startMeters ? 1 : Math.max(0, Math.min(1, (toMeters - segment.startMeters) / (segment.endMeters - segment.startMeters)))
+    const startRatio =
+      segment.endMeters === segment.startMeters
+        ? 0
+        : Math.max(
+            0,
+            Math.min(
+              1,
+              (fromMeters - segment.startMeters) / (segment.endMeters - segment.startMeters),
+            ),
+          )
+    const endRatio =
+      segment.endMeters === segment.startMeters
+        ? 1
+        : Math.max(
+            0,
+            Math.min(
+              1,
+              (toMeters - segment.startMeters) / (segment.endMeters - segment.startMeters),
+            ),
+          )
     const start: [number, number] = [
       segment.start[0] + (segment.end[0] - segment.start[0]) * startRatio,
       segment.start[1] + (segment.end[1] - segment.start[1]) * startRatio,
@@ -462,7 +636,8 @@ function confidenceFor(input: {
 }): AtlasEtaPredictionConfidence {
   if ((input.positionAgeSeconds ?? Number.POSITIVE_INFINITY) > oldPositionSeconds) return 'low'
   if (input.shapeDistanceMeters > 160) return 'low'
-  if (input.observations >= 3 && input.speedMps !== undefined && input.shapeDistanceMeters <= 80) return 'high'
+  if (input.observations >= 3 && input.speedMps !== undefined && input.shapeDistanceMeters <= 80)
+    return 'high'
   if (input.scheduleRemainingSeconds !== undefined || input.providerArrival) return 'medium'
   return 'low'
 }
@@ -512,20 +687,28 @@ function median(values: number[]) {
 }
 
 function sameCoordinate(left: [number, number] | undefined, right: [number, number]) {
-  return Boolean(left && Math.abs(left[0] - right[0]) < 0.0000001 && Math.abs(left[1] - right[1]) < 0.0000001)
+  return Boolean(
+    left && Math.abs(left[0] - right[0]) < 0.0000001 && Math.abs(left[1] - right[1]) < 0.0000001,
+  )
 }
 
-function haversineMeters(fromLatitude: number, fromLongitude: number, toLatitude: number, toLongitude: number) {
+function haversineMeters(
+  fromLatitude: number,
+  fromLongitude: number,
+  toLatitude: number,
+  toLongitude: number,
+) {
   const earthRadiusMeters = 6371000
   const deltaLatitude = degreesToRadians(toLatitude - fromLatitude)
   const deltaLongitude = degreesToRadians(toLongitude - fromLongitude)
   const fromRadians = degreesToRadians(fromLatitude)
   const toRadians = degreesToRadians(toLatitude)
-  const a = Math.sin(deltaLatitude / 2) ** 2
-    + Math.cos(fromRadians) * Math.cos(toRadians) * Math.sin(deltaLongitude / 2) ** 2
+  const a =
+    Math.sin(deltaLatitude / 2) ** 2 +
+    Math.cos(fromRadians) * Math.cos(toRadians) * Math.sin(deltaLongitude / 2) ** 2
   return 2 * earthRadiusMeters * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
 function degreesToRadians(value: number) {
-  return value * Math.PI / 180
+  return (value * Math.PI) / 180
 }

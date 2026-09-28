@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-*/
+api/index.cjs
+artifacts/
+.atlasops-cache/
+.atlasops-data/
+.phase0/
+.vercel/
+package-lock.json
+docs/phase-0/evidence.json

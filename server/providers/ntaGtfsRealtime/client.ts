@@ -1,6 +1,14 @@
 import gtfsRealtimeBindings from 'gtfs-realtime-bindings'
 import { cached } from '../cache.ts'
-import { fetchStaticGtfsIndex, fetchStaticGtfsStopTimes, probeRecommendedStaticGtfs, recommendedStaticGtfsUrl, staticGtfsUrl, type StaticGtfsIndex, type StaticGtfsStopTime } from './staticGtfs.ts'
+import {
+  fetchStaticGtfsIndex,
+  fetchStaticGtfsStopTimes,
+  probeRecommendedStaticGtfs,
+  recommendedStaticGtfsUrl,
+  staticGtfsUrl,
+  type StaticGtfsIndex,
+  type StaticGtfsStopTime,
+} from './staticGtfs.ts'
 
 const { transit_realtime } = gtfsRealtimeBindings
 
@@ -92,7 +100,11 @@ export interface NtaServiceAlertEntity {
   staticGtfsSource?: StaticGtfsIndex['source']
 }
 
-export async function fetchNtaVehiclePositions(): Promise<{ vehicles: NtaVehicleEntity[]; source: 'live' | 'fixture'; fetchedAt: string }> {
+export async function fetchNtaVehiclePositions(): Promise<{
+  vehicles: NtaVehicleEntity[]
+  source: 'live' | 'fixture'
+  fetchedAt: string
+}> {
   return cached('nta-gtfs-realtime-vehicles', ttlMs, async () => {
     const key = ntaApiKey()
     if (!key) return fixtureSnapshot()
@@ -100,7 +112,10 @@ export async function fetchNtaVehiclePositions(): Promise<{ vehicles: NtaVehicle
     const errors: string[] = []
     for (const endpoint of endpointsFromEnv()) {
       try {
-        const vehicles = await enrichVehicles(await fetchVehicleEndpoint(endpoint, key), await fetchTripUpdatesBestEffort(key))
+        const vehicles = await enrichVehicles(
+          await fetchVehicleEndpoint(endpoint, key),
+          await fetchTripUpdatesBestEffort(key),
+        )
         return { vehicles, source: 'live', fetchedAt: new Date().toISOString() }
       } catch (error) {
         errors.push(`${endpoint}: ${errorSummary(error)}`)
@@ -110,7 +125,11 @@ export async function fetchNtaVehiclePositions(): Promise<{ vehicles: NtaVehicle
   })
 }
 
-export async function fetchNtaServiceAlerts(): Promise<{ alerts: NtaServiceAlertEntity[]; source: 'live' | 'fixture'; fetchedAt: string }> {
+export async function fetchNtaServiceAlerts(): Promise<{
+  alerts: NtaServiceAlertEntity[]
+  source: 'live' | 'fixture'
+  fetchedAt: string
+}> {
   return cached('nta-gtfs-realtime-alerts', 60 * 1000, async () => {
     const key = ntaApiKey()
     if (!key) return fixtureAlertSnapshot()
@@ -137,7 +156,9 @@ export async function ntaDiagnostics() {
     const index = await fetchStaticGtfsIndex()
     staticGtfs = {
       configured: Boolean(process.env.NTA_GTFS_STATIC_URL?.trim()),
-      defaultRecommended: !process.env.NTA_GTFS_STATIC_URL?.trim() && effectiveStaticGtfsUrl === recommendedStaticGtfsUrl,
+      defaultRecommended:
+        !process.env.NTA_GTFS_STATIC_URL?.trim() &&
+        effectiveStaticGtfsUrl === recommendedStaticGtfsUrl,
       source: index.source,
       routeCount: index.routesById.size,
       tripCount: index.tripsById.size,
@@ -147,7 +168,9 @@ export async function ntaDiagnostics() {
   } catch (error) {
     staticGtfs = {
       configured: Boolean(process.env.NTA_GTFS_STATIC_URL?.trim()),
-      defaultRecommended: !process.env.NTA_GTFS_STATIC_URL?.trim() && effectiveStaticGtfsUrl === recommendedStaticGtfsUrl,
+      defaultRecommended:
+        !process.env.NTA_GTFS_STATIC_URL?.trim() &&
+        effectiveStaticGtfsUrl === recommendedStaticGtfsUrl,
       source: 'unavailable' as const,
       error: error instanceof Error ? error.message : 'Static GTFS check failed',
     }
@@ -226,27 +249,38 @@ async function fetchVehicleEndpoint(endpoint: string, key: string) {
   return feed.entity.flatMap((entity): NtaVehicleEntity[] => {
     const vehicle = entity.vehicle
     const position = vehicle?.position
-    if (!vehicle || !position || !Number.isFinite(position.latitude) || !Number.isFinite(position.longitude)) return []
-    return [{
-      id: entity.id,
-      vehicleId: optionalString(vehicle.vehicle?.id),
-      label: optionalString(vehicle.vehicle?.label),
-      licensePlate: optionalString(vehicle.vehicle?.licensePlate),
-      tripId: optionalString(vehicle.trip?.tripId),
-      routeId: optionalString(vehicle.trip?.routeId),
-      startTime: optionalString(vehicle.trip?.startTime),
-      startDate: optionalString(vehicle.trip?.startDate),
-      latitude: position.latitude,
-      longitude: position.longitude,
-      bearing: finiteNumber(position.bearing),
-      speed: finiteNumber(position.speed),
-      timestamp: finiteNumber(vehicle.timestamp),
-      currentStopSequence: finiteNumber(vehicle.currentStopSequence),
-      stopId: optionalString(vehicle.stopId),
-      currentStatus: vehicle.currentStatus === undefined ? undefined : String(vehicle.currentStatus),
-      congestionLevel: vehicle.congestionLevel === undefined ? undefined : String(vehicle.congestionLevel),
-      occupancyStatus: vehicle.occupancyStatus === undefined ? undefined : String(vehicle.occupancyStatus),
-    }]
+    if (
+      !vehicle ||
+      !position ||
+      !Number.isFinite(position.latitude) ||
+      !Number.isFinite(position.longitude)
+    )
+      return []
+    return [
+      {
+        id: entity.id,
+        vehicleId: optionalString(vehicle.vehicle?.id),
+        label: optionalString(vehicle.vehicle?.label),
+        licensePlate: optionalString(vehicle.vehicle?.licensePlate),
+        tripId: optionalString(vehicle.trip?.tripId),
+        routeId: optionalString(vehicle.trip?.routeId),
+        startTime: optionalString(vehicle.trip?.startTime),
+        startDate: optionalString(vehicle.trip?.startDate),
+        latitude: position.latitude,
+        longitude: position.longitude,
+        bearing: finiteNumber(position.bearing),
+        speed: finiteNumber(position.speed),
+        timestamp: finiteNumber(vehicle.timestamp),
+        currentStopSequence: finiteNumber(vehicle.currentStopSequence),
+        stopId: optionalString(vehicle.stopId),
+        currentStatus:
+          vehicle.currentStatus === undefined ? undefined : String(vehicle.currentStatus),
+        congestionLevel:
+          vehicle.congestionLevel === undefined ? undefined : String(vehicle.congestionLevel),
+        occupancyStatus:
+          vehicle.occupancyStatus === undefined ? undefined : String(vehicle.occupancyStatus),
+      },
+    ]
   })
 }
 
@@ -268,21 +302,25 @@ async function fetchAlertEndpoint(endpoint: string, key: string) {
   return feed.entity.flatMap((entity): NtaServiceAlertEntity[] => {
     const alert = entity.alert
     if (!alert) return []
-    return [{
-      id: entity.id,
-      cause: alert.cause === undefined ? undefined : String(alert.cause),
-      effect: alert.effect === undefined ? undefined : String(alert.effect),
-      header: translatedText(alert.headerText),
-      description: translatedText(alert.descriptionText),
-      url: translatedText(alert.url),
-      activePeriods: (alert.activePeriod ?? []).map((period) => ({
-        start: finiteNumber(period.start),
-        end: finiteNumber(period.end),
-      })),
-      routeIds: (alert.informedEntity ?? []).flatMap((entity) => presentString(entity.routeId)),
-      stopIds: (alert.informedEntity ?? []).flatMap((entity) => presentString(entity.stopId)),
-      tripIds: (alert.informedEntity ?? []).flatMap((entity) => presentString(entity.trip?.tripId)),
-    }]
+    return [
+      {
+        id: entity.id,
+        cause: alert.cause === undefined ? undefined : String(alert.cause),
+        effect: alert.effect === undefined ? undefined : String(alert.effect),
+        header: translatedText(alert.headerText),
+        description: translatedText(alert.descriptionText),
+        url: translatedText(alert.url),
+        activePeriods: (alert.activePeriod ?? []).map((period) => ({
+          start: finiteNumber(period.start),
+          end: finiteNumber(period.end),
+        })),
+        routeIds: (alert.informedEntity ?? []).flatMap((entity) => presentString(entity.routeId)),
+        stopIds: (alert.informedEntity ?? []).flatMap((entity) => presentString(entity.stopId)),
+        tripIds: (alert.informedEntity ?? []).flatMap((entity) =>
+          presentString(entity.trip?.tripId),
+        ),
+      },
+    ]
   })
 }
 
@@ -312,22 +350,26 @@ async function fetchTripUpdateEndpoint(endpoint: string, key: string) {
   return feed.entity.flatMap((entity): NtaTripUpdateEntity[] => {
     const tripUpdate = entity.tripUpdate
     if (!tripUpdate) return []
-    const stopUpdate = (tripUpdate.stopTimeUpdate ?? []).find((update) => {
-      const delay = finiteNumber(update.arrival?.delay) ?? finiteNumber(update.departure?.delay)
-      return delay !== undefined
-    }) ?? tripUpdate.stopTimeUpdate?.[0]
-    return [{
-      id: entity.id,
-      tripId: optionalString(tripUpdate.trip?.tripId),
-      routeId: optionalString(tripUpdate.trip?.routeId),
-      vehicleId: optionalString(tripUpdate.vehicle?.id),
-      timestamp: finiteNumber(tripUpdate.timestamp),
-      delay: finiteNumber(stopUpdate?.arrival?.delay) ?? finiteNumber(stopUpdate?.departure?.delay),
-      arrivalTime: finiteNumber(stopUpdate?.arrival?.time),
-      departureTime: finiteNumber(stopUpdate?.departure?.time),
-      stopId: optionalString(stopUpdate?.stopId),
-      stopSequence: finiteNumber(stopUpdate?.stopSequence),
-    }]
+    const stopUpdate =
+      (tripUpdate.stopTimeUpdate ?? []).find((update) => {
+        const delay = finiteNumber(update.arrival?.delay) ?? finiteNumber(update.departure?.delay)
+        return delay !== undefined
+      }) ?? tripUpdate.stopTimeUpdate?.[0]
+    return [
+      {
+        id: entity.id,
+        tripId: optionalString(tripUpdate.trip?.tripId),
+        routeId: optionalString(tripUpdate.trip?.routeId),
+        vehicleId: optionalString(tripUpdate.vehicle?.id),
+        timestamp: finiteNumber(tripUpdate.timestamp),
+        delay:
+          finiteNumber(stopUpdate?.arrival?.delay) ?? finiteNumber(stopUpdate?.departure?.delay),
+        arrivalTime: finiteNumber(stopUpdate?.arrival?.time),
+        departureTime: finiteNumber(stopUpdate?.departure?.time),
+        stopId: optionalString(stopUpdate?.stopId),
+        stopSequence: finiteNumber(stopUpdate?.stopSequence),
+      },
+    ]
   })
 }
 
@@ -360,27 +402,41 @@ function normalizeJsonAlerts(feed: unknown): NtaServiceAlertEntity[] {
     if (!isRecord(entity)) return []
     const alert = recordValue(entity, 'alert')
     if (!isRecord(alert)) return []
-    const activePeriods = arrayValue(alert, 'activePeriod', 'active_period').map((period) => isRecord(period) ? {
-      start: finiteNumber(recordValue(period, 'start')),
-      end: finiteNumber(recordValue(period, 'end')),
-    } : {})
+    const activePeriods = arrayValue(alert, 'activePeriod', 'active_period').map((period) =>
+      isRecord(period)
+        ? {
+            start: finiteNumber(recordValue(period, 'start')),
+            end: finiteNumber(recordValue(period, 'end')),
+          }
+        : {},
+    )
     const informedEntities = arrayValue(alert, 'informedEntity', 'informed_entity')
-    return [{
-      id: stringValue(recordValue(entity, 'id')) ?? crypto.randomUUID(),
-      cause: stringValue(recordValue(alert, 'cause')),
-      effect: stringValue(recordValue(alert, 'effect')),
-      header: translatedJsonText(recordValue(alert, 'headerText', 'header_text')),
-      description: translatedJsonText(recordValue(alert, 'descriptionText', 'description_text')),
-      url: translatedJsonText(recordValue(alert, 'url')),
-      activePeriods,
-      routeIds: informedEntities.flatMap((item) => isRecord(item) ? presentString(stringValue(recordValue(item, 'routeId', 'route_id'))) : []),
-      stopIds: informedEntities.flatMap((item) => isRecord(item) ? presentString(stringValue(recordValue(item, 'stopId', 'stop_id'))) : []),
-      tripIds: informedEntities.flatMap((item) => {
-        if (!isRecord(item)) return []
-        const trip = recordValue(item, 'trip')
-        return isRecord(trip) ? presentString(stringValue(recordValue(trip, 'tripId', 'trip_id'))) : []
-      }),
-    }]
+    return [
+      {
+        id: stringValue(recordValue(entity, 'id')) ?? crypto.randomUUID(),
+        cause: stringValue(recordValue(alert, 'cause')),
+        effect: stringValue(recordValue(alert, 'effect')),
+        header: translatedJsonText(recordValue(alert, 'headerText', 'header_text')),
+        description: translatedJsonText(recordValue(alert, 'descriptionText', 'description_text')),
+        url: translatedJsonText(recordValue(alert, 'url')),
+        activePeriods,
+        routeIds: informedEntities.flatMap((item) =>
+          isRecord(item)
+            ? presentString(stringValue(recordValue(item, 'routeId', 'route_id')))
+            : [],
+        ),
+        stopIds: informedEntities.flatMap((item) =>
+          isRecord(item) ? presentString(stringValue(recordValue(item, 'stopId', 'stop_id'))) : [],
+        ),
+        tripIds: informedEntities.flatMap((item) => {
+          if (!isRecord(item)) return []
+          const trip = recordValue(item, 'trip')
+          return isRecord(trip)
+            ? presentString(stringValue(recordValue(trip, 'tripId', 'trip_id')))
+            : []
+        }),
+      },
+    ]
   })
 }
 
@@ -392,7 +448,9 @@ function optionalString(value: string | null | undefined) {
   return value?.trim() ? value : undefined
 }
 
-function translatedText(value: { translation?: Array<{ text?: string | null }> | null } | null | undefined) {
+function translatedText(
+  value: { translation?: Array<{ text?: string | null }> | null } | null | undefined,
+) {
   return value?.translation?.find((translation) => translation.text)?.text ?? undefined
 }
 
@@ -447,10 +505,88 @@ function fixtureSnapshot() {
   const now = new Date()
   const timestamp = Math.floor(now.getTime() / 1000)
   const vehicles: NtaVehicleEntity[] = [
-    { id: 'fixture-46a-1', vehicleId: 'TFI-FIX-46A-1', label: '46A', routeId: '46A', routeShortName: '46A', routeLongName: 'Dun Laoghaire - Phoenix Park', agencyName: 'Fixture Transit', tripId: 'fixture-trip-46a', tripHeadsign: 'Phoenix Park', latitude: 53.3438, longitude: -6.2546, bearing: 320, speed: 7.2, timestamp, scheduleStatus: 'late', scheduleDeviationSeconds: 420, scheduleSource: 'gtfs-realtime-trip-update', nextStopName: 'Leeson Street Lower', staticGtfsSource: 'unavailable' },
-    { id: 'fixture-145-1', vehicleId: 'TFI-FIX-145-1', label: '145', routeId: '145', routeShortName: '145', routeLongName: 'Heuston Station - Kilmacanogue', agencyName: 'Fixture Transit', tripId: 'fixture-trip-145', tripHeadsign: 'Heuston Station', latitude: 53.3337, longitude: -6.2488, bearing: 28, speed: 6.4, timestamp, scheduleStatus: 'on-time', scheduleDeviationSeconds: 45, scheduleSource: 'gtfs-realtime-trip-update', nextStopName: 'Dawson Street', staticGtfsSource: 'unavailable' },
-    { id: 'fixture-g1-1', vehicleId: 'TFI-FIX-G1-1', label: 'G1', routeId: 'G1', routeShortName: 'G1', routeLongName: 'Spencer Dock - Red Cow Luas', agencyName: 'Fixture Transit', tripId: 'fixture-trip-g1', tripHeadsign: 'Spencer Dock', latitude: 53.3489, longitude: -6.3037, bearing: 92, speed: 8.1, timestamp, scheduleStatus: 'early', scheduleDeviationSeconds: -180, scheduleSource: 'gtfs-realtime-trip-update', nextStopName: 'Inchicore', staticGtfsSource: 'unavailable' },
-    { id: 'fixture-15-1', vehicleId: 'TFI-FIX-15-1', label: '15', routeId: '15', routeShortName: '15', routeLongName: 'Clongriffin - Ballycullen Road', agencyName: 'Fixture Transit', tripId: 'fixture-trip-15', tripHeadsign: 'Clongriffin', latitude: 53.3172, longitude: -6.2658, bearing: 354, speed: 5.8, timestamp, scheduleStatus: 'unknown', scheduleSource: 'unavailable', staticGtfsSource: 'unavailable' },
+    {
+      id: 'fixture-46a-1',
+      vehicleId: 'TFI-FIX-46A-1',
+      label: '46A',
+      routeId: '46A',
+      routeShortName: '46A',
+      routeLongName: 'Dun Laoghaire - Phoenix Park',
+      agencyName: 'Fixture Transit',
+      tripId: 'fixture-trip-46a',
+      tripHeadsign: 'Phoenix Park',
+      latitude: 53.3438,
+      longitude: -6.2546,
+      bearing: 320,
+      speed: 7.2,
+      timestamp,
+      scheduleStatus: 'late',
+      scheduleDeviationSeconds: 420,
+      scheduleSource: 'gtfs-realtime-trip-update',
+      nextStopName: 'Leeson Street Lower',
+      staticGtfsSource: 'unavailable',
+    },
+    {
+      id: 'fixture-145-1',
+      vehicleId: 'TFI-FIX-145-1',
+      label: '145',
+      routeId: '145',
+      routeShortName: '145',
+      routeLongName: 'Heuston Station - Kilmacanogue',
+      agencyName: 'Fixture Transit',
+      tripId: 'fixture-trip-145',
+      tripHeadsign: 'Heuston Station',
+      latitude: 53.3337,
+      longitude: -6.2488,
+      bearing: 28,
+      speed: 6.4,
+      timestamp,
+      scheduleStatus: 'on-time',
+      scheduleDeviationSeconds: 45,
+      scheduleSource: 'gtfs-realtime-trip-update',
+      nextStopName: 'Dawson Street',
+      staticGtfsSource: 'unavailable',
+    },
+    {
+      id: 'fixture-g1-1',
+      vehicleId: 'TFI-FIX-G1-1',
+      label: 'G1',
+      routeId: 'G1',
+      routeShortName: 'G1',
+      routeLongName: 'Spencer Dock - Red Cow Luas',
+      agencyName: 'Fixture Transit',
+      tripId: 'fixture-trip-g1',
+      tripHeadsign: 'Spencer Dock',
+      latitude: 53.3489,
+      longitude: -6.3037,
+      bearing: 92,
+      speed: 8.1,
+      timestamp,
+      scheduleStatus: 'early',
+      scheduleDeviationSeconds: -180,
+      scheduleSource: 'gtfs-realtime-trip-update',
+      nextStopName: 'Inchicore',
+      staticGtfsSource: 'unavailable',
+    },
+    {
+      id: 'fixture-15-1',
+      vehicleId: 'TFI-FIX-15-1',
+      label: '15',
+      routeId: '15',
+      routeShortName: '15',
+      routeLongName: 'Clongriffin - Ballycullen Road',
+      agencyName: 'Fixture Transit',
+      tripId: 'fixture-trip-15',
+      tripHeadsign: 'Clongriffin',
+      latitude: 53.3172,
+      longitude: -6.2658,
+      bearing: 354,
+      speed: 5.8,
+      timestamp,
+      scheduleStatus: 'unknown',
+      scheduleSource: 'unavailable',
+      staticGtfsSource: 'unavailable',
+    },
   ]
   return { vehicles, source: 'fixture' as const, fetchedAt: now.toISOString() }
 }
@@ -462,22 +598,27 @@ function fixtureAlertSnapshot() {
   return {
     source: 'fixture' as const,
     fetchedAt: now.toISOString(),
-    alerts: [{
-      id: 'fixture-alert-route-46a',
-      cause: 'UNKNOWN_CAUSE',
-      effect: 'SIGNIFICANT_DELAYS',
-      header: 'Fixture delay on route 46A',
-      description: 'Fixture GTFS-Realtime alert used when no NTA API key is configured.',
-      activePeriods: [{ start, end }],
-      routeIds: ['46A'],
-      stopIds: [],
-      tripIds: ['fixture-trip-46a'],
-      staticGtfsSource: 'unavailable' as const,
-    }],
+    alerts: [
+      {
+        id: 'fixture-alert-route-46a',
+        cause: 'UNKNOWN_CAUSE',
+        effect: 'SIGNIFICANT_DELAYS',
+        header: 'Fixture delay on route 46A',
+        description: 'Fixture GTFS-Realtime alert used when no NTA API key is configured.',
+        activePeriods: [{ start, end }],
+        routeIds: ['46A'],
+        stopIds: [],
+        tripIds: ['fixture-trip-46a'],
+        staticGtfsSource: 'unavailable' as const,
+      },
+    ],
   }
 }
 
-async function enrichVehicles(vehicles: NtaVehicleEntity[], tripUpdates: NtaTripUpdateEntity[] = []): Promise<NtaVehicleEntity[]> {
+async function enrichVehicles(
+  vehicles: NtaVehicleEntity[],
+  tripUpdates: NtaTripUpdateEntity[] = [],
+): Promise<NtaVehicleEntity[]> {
   let staticIndex
   try {
     staticIndex = await fetchStaticGtfsIndex()
@@ -485,16 +626,20 @@ async function enrichVehicles(vehicles: NtaVehicleEntity[], tripUpdates: NtaTrip
     return vehicles.map((vehicle) => enrichVehicleSchedule(vehicle, tripUpdates))
   }
 
-  const staticFallbackStopTimes = await fetchStaticGtfsStopTimes(vehicles.flatMap((vehicle) => {
-    if (!vehicle.tripId) return []
-    return findTripUpdate(vehicle, tripUpdates)?.delay === undefined ? [vehicle.tripId] : []
-  }))
+  const staticFallbackStopTimes = await fetchStaticGtfsStopTimes(
+    vehicles.flatMap((vehicle) => {
+      if (!vehicle.tripId) return []
+      return findTripUpdate(vehicle, tripUpdates)?.delay === undefined ? [vehicle.tripId] : []
+    }),
+  )
 
   return vehicles.map((vehicle) => {
     const trip = vehicle.tripId ? staticIndex.tripsById.get(vehicle.tripId) : undefined
     const routeId = vehicle.routeId ?? trip?.routeId
     const route = routeId ? staticIndex.routesById.get(routeId) : undefined
-    const agency = route?.agencyId ? staticIndex.agenciesById.get(route.agencyId) : staticIndex.agenciesById.get('default')
+    const agency = route?.agencyId
+      ? staticIndex.agenciesById.get(route.agencyId)
+      : staticIndex.agenciesById.get('default')
     return {
       ...vehicle,
       routeId,
@@ -551,12 +696,18 @@ function scheduleAdherence(
       scheduleDeviationSeconds: Math.round(tripUpdate.delay),
       scheduleSource: 'gtfs-realtime-trip-update' as const,
       nextStopId: tripUpdate.stopId,
-      nextStopName: tripUpdate.stopId ? staticIndex?.stopsById.get(tripUpdate.stopId)?.name : undefined,
-      providerArrival: tripUpdate.arrivalTime ? new Date(tripUpdate.arrivalTime * 1000).toISOString() : undefined,
+      nextStopName: tripUpdate.stopId
+        ? staticIndex?.stopsById.get(tripUpdate.stopId)?.name
+        : undefined,
+      providerArrival: tripUpdate.arrivalTime
+        ? new Date(tripUpdate.arrivalTime * 1000).toISOString()
+        : undefined,
     }
   }
 
-  const estimate = staticIndex ? estimateStaticScheduleAdherence(vehicle, staticIndex, staticStopTimes) : undefined
+  const estimate = staticIndex
+    ? estimateStaticScheduleAdherence(vehicle, staticIndex, staticStopTimes)
+    : undefined
   if (estimate) return estimate
 
   return {
@@ -567,12 +718,24 @@ function scheduleAdherence(
 
 function findTripUpdate(vehicle: NtaVehicleEntity, tripUpdates: NtaTripUpdateEntity[]) {
   if (!tripUpdates.length) return undefined
-  return tripUpdates.find((update) => vehicle.tripId && update.tripId === vehicle.tripId)
-    ?? tripUpdates.find((update) => vehicle.vehicleId && update.vehicleId === vehicle.vehicleId)
-    ?? tripUpdates.find((update) => vehicle.routeId && vehicle.tripId && update.routeId === vehicle.routeId && update.tripId === vehicle.tripId)
+  return (
+    tripUpdates.find((update) => vehicle.tripId && update.tripId === vehicle.tripId) ??
+    tripUpdates.find((update) => vehicle.vehicleId && update.vehicleId === vehicle.vehicleId) ??
+    tripUpdates.find(
+      (update) =>
+        vehicle.routeId &&
+        vehicle.tripId &&
+        update.routeId === vehicle.routeId &&
+        update.tripId === vehicle.tripId,
+    )
+  )
 }
 
-function estimateStaticScheduleAdherence(vehicle: NtaVehicleEntity, staticIndex: StaticGtfsIndex, staticStopTimes: Map<string, StaticGtfsStopTime[]>) {
+function estimateStaticScheduleAdherence(
+  vehicle: NtaVehicleEntity,
+  staticIndex: StaticGtfsIndex,
+  staticStopTimes: Map<string, StaticGtfsStopTime[]>,
+) {
   if (!vehicle.tripId || vehicle.timestamp === undefined) return undefined
   const stopTimes = staticStopTimes.get(vehicle.tripId)
   if (!stopTimes?.length) return undefined
@@ -598,7 +761,10 @@ function estimateStaticScheduleAdherence(vehicle: NtaVehicleEntity, staticIndex:
   }
 }
 
-function scheduledStopFromRealtimeVehicle(vehicle: NtaVehicleEntity, stopTimes: StaticGtfsStopTime[]) {
+function scheduledStopFromRealtimeVehicle(
+  vehicle: NtaVehicleEntity,
+  stopTimes: StaticGtfsStopTime[],
+) {
   if (vehicle.stopId) {
     const byStopId = stopTimes.find((stopTime) => stopTime.stopId === vehicle.stopId)
     if (byStopId) return byStopId
@@ -609,7 +775,11 @@ function scheduledStopFromRealtimeVehicle(vehicle: NtaVehicleEntity, stopTimes: 
   return undefined
 }
 
-function scheduledStopWithDistance(vehicle: NtaVehicleEntity, stopTime: StaticGtfsStopTime, staticIndex: StaticGtfsIndex) {
+function scheduledStopWithDistance(
+  vehicle: NtaVehicleEntity,
+  stopTime: StaticGtfsStopTime,
+  staticIndex: StaticGtfsIndex,
+) {
   const stop = staticIndex.stopsById.get(stopTime.stopId)
   const distanceMeters = stop
     ? haversineMeters(vehicle.latitude, vehicle.longitude, stop.latitude, stop.longitude)
@@ -617,12 +787,27 @@ function scheduledStopWithDistance(vehicle: NtaVehicleEntity, stopTime: StaticGt
   return { stopTime, stop, distanceMeters }
 }
 
-function nearestScheduledStop(vehicle: NtaVehicleEntity, stopTimes: StaticGtfsStopTime[], staticIndex: StaticGtfsIndex) {
-  let nearest: { stopTime: StaticGtfsStopTime; stop?: { name?: string; latitude: number; longitude: number }; distanceMeters: number } | undefined
+function nearestScheduledStop(
+  vehicle: NtaVehicleEntity,
+  stopTimes: StaticGtfsStopTime[],
+  staticIndex: StaticGtfsIndex,
+) {
+  let nearest:
+    | {
+        stopTime: StaticGtfsStopTime
+        stop?: { name?: string; latitude: number; longitude: number }
+        distanceMeters: number
+      }
+    | undefined
   for (const stopTime of stopTimes) {
     const stop = staticIndex.stopsById.get(stopTime.stopId)
     if (!stop) continue
-    const distanceMeters = haversineMeters(vehicle.latitude, vehicle.longitude, stop.latitude, stop.longitude)
+    const distanceMeters = haversineMeters(
+      vehicle.latitude,
+      vehicle.longitude,
+      stop.latitude,
+      stop.longitude,
+    )
     if (!nearest || distanceMeters < nearest.distanceMeters) {
       nearest = { stopTime, stop, distanceMeters }
     }
@@ -647,17 +832,23 @@ function normalizeDeviationSeconds(seconds: number) {
   return seconds
 }
 
-function haversineMeters(fromLatitude: number, fromLongitude: number, toLatitude: number, toLongitude: number) {
+function haversineMeters(
+  fromLatitude: number,
+  fromLongitude: number,
+  toLatitude: number,
+  toLongitude: number,
+) {
   const earthRadiusMeters = 6371000
   const deltaLatitude = degreesToRadians(toLatitude - fromLatitude)
   const deltaLongitude = degreesToRadians(toLongitude - fromLongitude)
   const fromRadians = degreesToRadians(fromLatitude)
   const toRadians = degreesToRadians(toLatitude)
-  const a = Math.sin(deltaLatitude / 2) ** 2
-    + Math.cos(fromRadians) * Math.cos(toRadians) * Math.sin(deltaLongitude / 2) ** 2
+  const a =
+    Math.sin(deltaLatitude / 2) ** 2 +
+    Math.cos(fromRadians) * Math.cos(toRadians) * Math.sin(deltaLongitude / 2) ** 2
   return 2 * earthRadiusMeters * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
 function degreesToRadians(value: number) {
-  return value * Math.PI / 180
+  return (value * Math.PI) / 180
 }

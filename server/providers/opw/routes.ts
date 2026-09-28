@@ -37,7 +37,9 @@ export function opwRoutes(): Connect.NextHandleFunction {
         syncedAt: new Date().toISOString(),
       })
     } catch (error) {
-      sendJson(response, 502, { error: error instanceof Error ? error.message : 'OPW telemetry request failed' })
+      sendJson(response, 502, {
+        error: error instanceof Error ? error.message : 'OPW telemetry request failed',
+      })
     }
   }
 }

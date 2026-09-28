@@ -7,15 +7,13 @@ import test from 'node:test'
 const dataDir = await mkdtemp(join(tmpdir(), 'atlasops-history-'))
 process.env.ATLASOPS_DATA_DIR = dataDir
 
-const {
-  journeySegments,
-  observedStopArrivals,
-  recordVehicleSnapshot,
-  vehicleObservationSummary,
-} = await import('../server/transport/historyStore.ts')
+const { journeySegments, observedStopArrivals, recordVehicleSnapshot, vehicleObservationSummary } =
+  await import('../server/transport/historyStore.ts')
 
 test('vehicle snapshots persist observations without duplicating identical positions', async () => {
-  const first = collection([vehicle({ observedAt: '2026-09-03T10:00:00.000Z', nextStopId: 'stop-a', sequence: 1 })])
+  const first = collection([
+    vehicle({ observedAt: '2026-09-03T10:00:00.000Z', nextStopId: 'stop-a', sequence: 1 }),
+  ])
 
   const firstRecord = await recordVehicleSnapshot(first, 'live', '2026-09-03T10:00:01.000Z')
   const duplicateRecord = await recordVehicleSnapshot(first, 'live', '2026-09-03T10:00:02.000Z')
@@ -27,31 +25,49 @@ test('vehicle snapshots persist observations without duplicating identical posit
 })
 
 test('next-stop transitions derive observed arrivals and journey segments', async () => {
-  await recordVehicleSnapshot(collection([vehicle({
-    vehicleId: 'vehicle-2',
-    featureId: 'nta-gtfs-realtime:vehicle-2',
-    observedAt: '2026-09-03T10:00:00.000Z',
-    nextStopId: 'stop-a',
-    sequence: 1,
-    scheduleDeviationSeconds: 60,
-  })]), 'live', '2026-09-03T10:00:01.000Z')
-  await recordVehicleSnapshot(collection([vehicle({
-    vehicleId: 'vehicle-2',
-    featureId: 'nta-gtfs-realtime:vehicle-2',
-    observedAt: '2026-09-03T10:01:00.000Z',
-    nextStopId: 'stop-b',
-    sequence: 2,
-    scheduleDeviationSeconds: 60,
-    providerArrival: '2026-09-03T10:02:10.000Z',
-  })]), 'live', '2026-09-03T10:01:01.000Z')
-  await recordVehicleSnapshot(collection([vehicle({
-    vehicleId: 'vehicle-2',
-    featureId: 'nta-gtfs-realtime:vehicle-2',
-    observedAt: '2026-09-03T10:04:00.000Z',
-    nextStopId: 'stop-c',
-    sequence: 3,
-    scheduleDeviationSeconds: 90,
-  })]), 'live', '2026-09-03T10:04:01.000Z')
+  await recordVehicleSnapshot(
+    collection([
+      vehicle({
+        vehicleId: 'vehicle-2',
+        featureId: 'nta-gtfs-realtime:vehicle-2',
+        observedAt: '2026-09-03T10:00:00.000Z',
+        nextStopId: 'stop-a',
+        sequence: 1,
+        scheduleDeviationSeconds: 60,
+      }),
+    ]),
+    'live',
+    '2026-09-03T10:00:01.000Z',
+  )
+  await recordVehicleSnapshot(
+    collection([
+      vehicle({
+        vehicleId: 'vehicle-2',
+        featureId: 'nta-gtfs-realtime:vehicle-2',
+        observedAt: '2026-09-03T10:01:00.000Z',
+        nextStopId: 'stop-b',
+        sequence: 2,
+        scheduleDeviationSeconds: 60,
+        providerArrival: '2026-09-03T10:02:10.000Z',
+      }),
+    ]),
+    'live',
+    '2026-09-03T10:01:01.000Z',
+  )
+  await recordVehicleSnapshot(
+    collection([
+      vehicle({
+        vehicleId: 'vehicle-2',
+        featureId: 'nta-gtfs-realtime:vehicle-2',
+        observedAt: '2026-09-03T10:04:00.000Z',
+        nextStopId: 'stop-c',
+        sequence: 3,
+        scheduleDeviationSeconds: 90,
+      }),
+    ]),
+    'live',
+    '2026-09-03T10:04:01.000Z',
+  )
 
   const arrivals = await observedStopArrivals({ tripId: 'trip-1' })
   const segments = await journeySegments({ tripId: 'trip-1' })

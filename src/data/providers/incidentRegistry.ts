@@ -1,4 +1,8 @@
-import type { AtlasIncidentCollection, AtlasIncidentProvider, IncidentProviderState } from '../incident.types'
+import type {
+  AtlasIncidentCollection,
+  AtlasIncidentProvider,
+  IncidentProviderState,
+} from '../incident.types'
 import { epaBathingIncidentProvider } from './epaBathing/epaBathingIncidentProvider'
 import { ntaIncidentProvider } from './ntaGtfsRealtime/ntaIncidentProvider'
 

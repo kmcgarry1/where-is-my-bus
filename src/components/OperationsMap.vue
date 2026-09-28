@@ -2,9 +2,22 @@
 import mapboxgl, { type GeoJSONSource, type MapLayerMouseEvent } from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { AtlasFeatureCollection, AtlasFilters, AtlasProviderId, AtlasSelection } from '../data/atlas.types'
+import type {
+  AtlasFeatureCollection,
+  AtlasFilters,
+  AtlasProviderId,
+  AtlasSelection,
+} from '../data/atlas.types'
 import type { AtlasIncidentCollection, AtlasIncidentProviderId } from '../data/incident.types'
-import type { AtlasEtaPrediction, AtlasMovingAssetCollection, AtlasMovingFilters, AtlasMovingProviderId, AtlasSpatialFilter, AtlasTransitStopCollection, AtlasVehicleTrailCollection } from '../data/movingAsset.types'
+import type {
+  AtlasEtaPrediction,
+  AtlasMovingAssetCollection,
+  AtlasMovingFilters,
+  AtlasMovingProviderId,
+  AtlasSpatialFilter,
+  AtlasTransitStopCollection,
+  AtlasVehicleTrailCollection,
+} from '../data/movingAsset.types'
 import type { AtlasTimeContext } from '../data/time.types'
 
 const sourceIds: Record<AtlasProviderId, string> = {
@@ -137,21 +150,28 @@ watch(() => props.selectedEtaPrediction, updateEtaPredictionSources, { deep: tru
 watch(() => props.selectedVehicleTrail, updateSelectedVehicleTrail, { deep: true })
 watch(() => props.filters, updateFilters, { deep: true })
 watch(() => props.movingFilters, updateMovingFilters, { deep: true })
-watch(() => props.transportRouteIds, () => {
-  updateMovingFilters()
-  focusTransportRoute()
-}, { deep: true })
+watch(
+  () => props.transportRouteIds,
+  () => {
+    updateMovingFilters()
+    focusTransportRoute()
+  },
+  { deep: true },
+)
 watch(() => props.transportSpatialFilter, focusSpatialFilter, { deep: true })
 watch(() => props.displayMode, updateDisplayMode)
 watch(() => props.roadTrafficVisible, updateRoadTrafficVisibility)
 watch(() => props.transitDensityVisible, updateTransitDensityVisibility)
 watch(() => props.transitStopsVisible, updateTransitStopsVisibility)
 watch(() => props.timeContext.mode, updateTimeMode)
-watch(() => props.selected, (current, previous) => {
-  updateSelectionState(previous, current)
-  updateIncidentSources()
-  focusSelection(current)
-})
+watch(
+  () => props.selected,
+  (current, previous) => {
+    updateSelectionState(previous, current)
+    updateIncidentSources()
+    focusSelection(current)
+  },
+)
 
 function addSourcesAndLayers() {
   if (!map) return
@@ -229,7 +249,14 @@ function addSourcesAndLayers() {
     filter: unclusteredFilter(),
     paint: {
       'circle-color': statusColorExpression(),
-      'circle-radius': ['case', ['boolean', ['feature-state', 'selected'], false], 10, ['boolean', ['feature-state', 'hover'], false], 8, 6],
+      'circle-radius': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false],
+        10,
+        ['boolean', ['feature-state', 'hover'], false],
+        8,
+        6,
+      ],
       'circle-stroke-color': ['case', ['boolean', ['get', 'stale'], false], '#6c757d', '#c8e7ff'],
       'circle-stroke-width': ['case', ['boolean', ['feature-state', 'selected'], false], 4, 2],
       'circle-opacity': ['case', ['==', ['get', 'status'], 'offline'], 0.55, 0.94],
@@ -244,7 +271,14 @@ function addSourcesAndLayers() {
     filter: unclusteredFilter(),
     paint: {
       'circle-color': statusColorExpression(),
-      'circle-radius': ['case', ['boolean', ['feature-state', 'selected'], false], 11, ['boolean', ['feature-state', 'hover'], false], 9, ['interpolate', ['linear'], ['coalesce', ['get', 'value'], 0], 0, 5, 20, 8, 40, 11]],
+      'circle-radius': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false],
+        11,
+        ['boolean', ['feature-state', 'hover'], false],
+        9,
+        ['interpolate', ['linear'], ['coalesce', ['get', 'value'], 0], 0, 5, 20, 8, 40, 11],
+      ],
       'circle-stroke-color': '#f5f1e8',
       'circle-stroke-width': ['case', ['boolean', ['feature-state', 'selected'], false], 4, 1.8],
       'circle-opacity': 0.94,
@@ -286,12 +320,7 @@ function addSourcesAndLayers() {
     filter: ['==', ['geometry-type'], 'Point'],
     paint: {
       'circle-color': severityColorExpression(),
-      'circle-radius': [
-        'case',
-        ['boolean', ['get', 'selected'], false],
-        15,
-        10,
-      ],
+      'circle-radius': ['case', ['boolean', ['get', 'selected'], false], 15, 10],
       'circle-stroke-color': '#f5f1e8',
       'circle-stroke-width': ['case', ['boolean', ['get', 'selected'], false], 4, 2],
       'circle-opacity': props.timeContext.mode === 'replay' ? 0.72 : 0.92,
@@ -348,17 +377,7 @@ function addSourcesAndLayers() {
     source: movingSourceIds['nta-gtfs-realtime'],
     maxzoom: 15,
     paint: {
-      'heatmap-weight': [
-        'match',
-        ['get', 'assetType'],
-        'bus',
-        1,
-        'tram',
-        1.25,
-        'rail',
-        1.1,
-        0.75,
-      ],
+      'heatmap-weight': ['match', ['get', 'assetType'], 'bus', 1, 'tram', 1.25, 'rail', 1.1, 0.75],
       'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 8, 0.7, 11, 1.15, 14, 1.8],
       'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 8, 18, 11, 30, 14, 48],
       'heatmap-color': [
@@ -386,8 +405,20 @@ function addSourcesAndLayers() {
     minzoom: 11.6,
     paint: {
       'circle-color': '#071318',
-      'circle-radius': ['case', ['boolean', ['feature-state', 'selected'], false], 7, ['boolean', ['feature-state', 'hover'], false], 6, 4],
-      'circle-stroke-color': ['case', ['boolean', ['feature-state', 'selected'], false], '#f6bd60', '#83d4c8'],
+      'circle-radius': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false],
+        7,
+        ['boolean', ['feature-state', 'hover'], false],
+        6,
+        4,
+      ],
+      'circle-stroke-color': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false],
+        '#f6bd60',
+        '#83d4c8',
+      ],
       'circle-stroke-width': ['case', ['boolean', ['feature-state', 'selected'], false], 2.4, 1.4],
       'circle-opacity': ['interpolate', ['linear'], ['zoom'], 11.6, 0.34, 13, 0.72, 15, 0.9],
     },
@@ -469,8 +500,22 @@ function addSourcesAndLayers() {
         6,
         4,
       ],
-      'circle-stroke-color': ['case', ['boolean', ['feature-state', 'selected'], false], '#f5f1e8', ['==', ['get', 'routeStopRole'], 'next-stop'], '#101820', '#83d4c8'],
-      'circle-stroke-width': ['case', ['boolean', ['feature-state', 'selected'], false], 3, ['==', ['get', 'routeStopRole'], 'next-stop'], 2.5, 1.3],
+      'circle-stroke-color': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false],
+        '#f5f1e8',
+        ['==', ['get', 'routeStopRole'], 'next-stop'],
+        '#101820',
+        '#83d4c8',
+      ],
+      'circle-stroke-width': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false],
+        3,
+        ['==', ['get', 'routeStopRole'], 'next-stop'],
+        2.5,
+        1.3,
+      ],
       'circle-opacity': 0.92,
     },
   })
@@ -480,7 +525,12 @@ function addSourcesAndLayers() {
     source: selectedRouteStopsSourceId,
     minzoom: 13.5,
     layout: {
-      'text-field': ['case', ['==', ['get', 'routeStopRole'], 'next-stop'], ['coalesce', ['get', 'name'], 'Next stop'], ''],
+      'text-field': [
+        'case',
+        ['==', ['get', 'routeStopRole'], 'next-stop'],
+        ['coalesce', ['get', 'name'], 'Next stop'],
+        '',
+      ],
       'text-font': ['Open Sans Semibold', 'Arial Unicode MS Regular'],
       'text-size': 11,
       'text-offset': [0, 1.15],
@@ -550,11 +600,35 @@ function addSourcesAndLayers() {
     type: 'circle',
     source: movingSourceIds['nta-gtfs-realtime'],
     paint: {
-      'circle-color': ['match', ['get', 'assetType'], 'bus', '#3da5d9', 'tram', '#b8a1ff', 'rail', '#83d4c8', '#f5f1e8'],
-      'circle-radius': ['case', ['boolean', ['feature-state', 'selected'], false], 12, ['boolean', ['feature-state', 'hover'], false], 10, 7],
+      'circle-color': [
+        'match',
+        ['get', 'assetType'],
+        'bus',
+        '#3da5d9',
+        'tram',
+        '#b8a1ff',
+        'rail',
+        '#83d4c8',
+        '#f5f1e8',
+      ],
+      'circle-radius': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false],
+        12,
+        ['boolean', ['feature-state', 'hover'], false],
+        10,
+        7,
+      ],
       'circle-stroke-color': '#101820',
       'circle-stroke-width': ['case', ['boolean', ['feature-state', 'selected'], false], 3, 1.4],
-      'circle-opacity': ['case', ['boolean', ['feature-state', 'selected'], false], 0.84, ['boolean', ['feature-state', 'hover'], false], 0.72, 0.46],
+      'circle-opacity': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false],
+        0.84,
+        ['boolean', ['feature-state', 'hover'], false],
+        0.72,
+        0.46,
+      ],
     },
   })
   map.addLayer({
@@ -573,7 +647,14 @@ function addSourcesAndLayers() {
     paint: {
       'icon-color': scheduleColorExpression(),
       'icon-halo-color': '#101820',
-      'icon-halo-width': ['case', ['boolean', ['feature-state', 'selected'], false], 2.6, ['boolean', ['feature-state', 'hover'], false], 2.2, 1.4],
+      'icon-halo-width': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false],
+        2.6,
+        ['boolean', ['feature-state', 'hover'], false],
+        2.2,
+        1.4,
+      ],
       'icon-opacity': ['case', ['==', ['get', 'status'], 'offline'], 0.52, 0.96],
     },
   })
@@ -665,7 +746,25 @@ function addMapboxTrafficLayers() {
     'source-layer': 'traffic',
     filter: [
       'all',
-      ['in', ['get', 'class'], ['literal', ['motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary', 'primary_link', 'secondary', 'tertiary', 'link', 'street']]],
+      [
+        'in',
+        ['get', 'class'],
+        [
+          'literal',
+          [
+            'motorway',
+            'motorway_link',
+            'trunk',
+            'trunk_link',
+            'primary',
+            'primary_link',
+            'secondary',
+            'tertiary',
+            'link',
+            'street',
+          ],
+        ],
+      ],
       ['!', ['==', ['get', 'closed'], 'yes']],
       ['in', ['get', 'congestion'], ['literal', ['moderate', 'heavy', 'severe']]],
     ],
@@ -690,24 +789,108 @@ function addMapboxTrafficLayers() {
         ['linear'],
         ['zoom'],
         8,
-        ['match', ['get', 'congestion'], 'low', 0.6, 'moderate', 0.8, 'heavy', 1, 'severe', 1.2, 0.65],
+        [
+          'match',
+          ['get', 'congestion'],
+          'low',
+          0.6,
+          'moderate',
+          0.8,
+          'heavy',
+          1,
+          'severe',
+          1.2,
+          0.65,
+        ],
         11,
-        ['match', ['get', 'congestion'], 'low', 1.2, 'moderate', 1.6, 'heavy', 2, 'severe', 2.35, 1.3],
+        [
+          'match',
+          ['get', 'congestion'],
+          'low',
+          1.2,
+          'moderate',
+          1.6,
+          'heavy',
+          2,
+          'severe',
+          2.35,
+          1.3,
+        ],
         14,
-        ['match', ['get', 'congestion'], 'low', 2.85, 'moderate', 3.8, 'heavy', 4.7, 'severe', 5.55, 3],
+        [
+          'match',
+          ['get', 'congestion'],
+          'low',
+          2.85,
+          'moderate',
+          3.8,
+          'heavy',
+          4.7,
+          'severe',
+          5.55,
+          3,
+        ],
         17,
-        ['match', ['get', 'congestion'], 'low', 4.5, 'moderate', 6, 'heavy', 7.45, 'severe', 8.75, 4.8],
+        [
+          'match',
+          ['get', 'congestion'],
+          'low',
+          4.5,
+          'moderate',
+          6,
+          'heavy',
+          7.45,
+          'severe',
+          8.75,
+          4.8,
+        ],
       ],
       'line-opacity': [
         'interpolate',
         ['linear'],
         ['zoom'],
         8,
-        ['match', ['get', 'congestion'], 'low', 0.3, 'moderate', 0.38, 'heavy', 0.44, 'severe', 0.48, 0.28],
+        [
+          'match',
+          ['get', 'congestion'],
+          'low',
+          0.3,
+          'moderate',
+          0.38,
+          'heavy',
+          0.44,
+          'severe',
+          0.48,
+          0.28,
+        ],
         11,
-        ['match', ['get', 'congestion'], 'low', 0.46, 'moderate', 0.55, 'heavy', 0.64, 'severe', 0.7, 0.44],
+        [
+          'match',
+          ['get', 'congestion'],
+          'low',
+          0.46,
+          'moderate',
+          0.55,
+          'heavy',
+          0.64,
+          'severe',
+          0.7,
+          0.44,
+        ],
         14,
-        ['match', ['get', 'congestion'], 'low', 0.62, 'moderate', 0.72, 'heavy', 0.82, 'severe', 0.88, 0.56],
+        [
+          'match',
+          ['get', 'congestion'],
+          'low',
+          0.62,
+          'moderate',
+          0.72,
+          'heavy',
+          0.82,
+          'severe',
+          0.88,
+          0.56,
+        ],
       ],
       'line-offset': ['interpolate', ['linear'], ['zoom'], 9, 0.6, 13, 1.4, 17, 2.8],
     },
@@ -769,15 +952,23 @@ function bindTransitStopLayer(layer: string, sourceId = transitStopsSourceId) {
   map.on('mouseleave', layer, () => clearHover())
   map.on('click', layer, (event) => {
     const featureId = event.features?.[0]?.properties?.id
-    if (featureId) emit('select', { kind: 'transit-stop', provider: 'nta-gtfs-realtime', featureId })
+    if (featureId)
+      emit('select', { kind: 'transit-stop', provider: 'nta-gtfs-realtime', featureId })
   })
 }
 
 function selectRenderedStopAtPoint(event: mapboxgl.MapMouseEvent) {
   if (!map) return
-  const feature = map.queryRenderedFeatures(event.point, {
-    layers: ['selected-eta-next-stop', 'selected-route-stops', 'nta-stop-icons', 'nta-stop-halos'],
-  }).find((feature) => typeof feature.properties?.id === 'string')
+  const feature = map
+    .queryRenderedFeatures(event.point, {
+      layers: [
+        'selected-eta-next-stop',
+        'selected-route-stops',
+        'nta-stop-icons',
+        'nta-stop-halos',
+      ],
+    })
+    .find((feature) => typeof feature.properties?.id === 'string')
   const featureId = feature?.properties?.id
   if (featureId) emit('select', { kind: 'transit-stop', provider: 'nta-gtfs-realtime', featureId })
 }
@@ -786,9 +977,16 @@ function selectRenderedStopFromCanvas(event: MouseEvent) {
   if (!map) return
   const rect = map.getCanvas().getBoundingClientRect()
   const point: [number, number] = [event.clientX - rect.left, event.clientY - rect.top]
-  const feature = map.queryRenderedFeatures(point, {
-    layers: ['selected-eta-next-stop', 'selected-route-stops', 'nta-stop-icons', 'nta-stop-halos'],
-  }).find((feature) => typeof feature.properties?.id === 'string')
+  const feature = map
+    .queryRenderedFeatures(point, {
+      layers: [
+        'selected-eta-next-stop',
+        'selected-route-stops',
+        'nta-stop-icons',
+        'nta-stop-halos',
+      ],
+    })
+    .find((feature) => typeof feature.properties?.id === 'string')
   const featureId = feature?.properties?.id
   if (featureId) emit('select', { kind: 'transit-stop', provider: 'nta-gtfs-realtime', featureId })
 }
@@ -823,7 +1021,8 @@ function bindClusterLayer(layer: string, sourceId: string) {
   map.on('click', layer, (event) => {
     const feature = event.features?.[0]
     const clusterId = feature?.properties?.cluster_id as number | undefined
-    const center = (feature?.geometry as GeoJSON.Point | undefined)?.coordinates as [number, number] | undefined
+    const center = (feature?.geometry as GeoJSON.Point | undefined)?.coordinates as
+      [number, number] | undefined
     if (clusterId === undefined || !center) return
     const source = map?.getSource(sourceId) as GeoJSONSource | undefined
     source?.getClusterExpansionZoom(clusterId, (error, zoom) => {
@@ -852,7 +1051,9 @@ function updateIncidentSources() {
         ...feature,
         properties: {
           ...feature.properties,
-          selected: props.selected?.kind === 'incident' && props.selected.featureId === feature.properties.id,
+          selected:
+            props.selected?.kind === 'incident' &&
+            props.selected.featureId === feature.properties.id,
         },
       })),
     })
@@ -876,25 +1077,40 @@ function updateTransitStopSource() {
 function updateEtaPredictionSources() {
   if (!mapReady.value || !map) return
   const selectedRouteSource = map.getSource(selectedRouteSourceId) as GeoJSONSource | undefined
-  selectedRouteSource?.setData(props.selectedEtaPrediction?.routeFeature ? {
-    type: 'FeatureCollection',
-    features: [props.selectedEtaPrediction.routeFeature],
-  } : emptySelectedRouteCollection())
+  selectedRouteSource?.setData(
+    props.selectedEtaPrediction?.routeFeature
+      ? {
+          type: 'FeatureCollection',
+          features: [props.selectedEtaPrediction.routeFeature],
+        }
+      : emptySelectedRouteCollection(),
+  )
 
-  const selectedRouteStopsSource = map.getSource(selectedRouteStopsSourceId) as GeoJSONSource | undefined
-  selectedRouteStopsSource?.setData(props.selectedEtaPrediction?.routeStops ?? emptyTransitStopCollection())
+  const selectedRouteStopsSource = map.getSource(selectedRouteStopsSourceId) as
+    GeoJSONSource | undefined
+  selectedRouteStopsSource?.setData(
+    props.selectedEtaPrediction?.routeStops ?? emptyTransitStopCollection(),
+  )
 
   const routeSource = map.getSource(etaRemainingRouteSourceId) as GeoJSONSource | undefined
-  routeSource?.setData(props.selectedEtaPrediction?.remainingRoute ? {
-    type: 'FeatureCollection',
-    features: [props.selectedEtaPrediction.remainingRoute],
-  } : emptyEtaRouteCollection())
+  routeSource?.setData(
+    props.selectedEtaPrediction?.remainingRoute
+      ? {
+          type: 'FeatureCollection',
+          features: [props.selectedEtaPrediction.remainingRoute],
+        }
+      : emptyEtaRouteCollection(),
+  )
 
   const stopSource = map.getSource(etaNextStopSourceId) as GeoJSONSource | undefined
-  stopSource?.setData(props.selectedEtaPrediction?.nextStopFeature ? {
-    type: 'FeatureCollection',
-    features: [props.selectedEtaPrediction.nextStopFeature],
-  } : emptyTransitStopCollection())
+  stopSource?.setData(
+    props.selectedEtaPrediction?.nextStopFeature
+      ? {
+          type: 'FeatureCollection',
+          features: [props.selectedEtaPrediction.nextStopFeature],
+        }
+      : emptyTransitStopCollection(),
+  )
 }
 
 function updateSelectedVehicleTrail() {
@@ -933,11 +1149,17 @@ function updateMovingFilters() {
       ? ['in', ['get', 'routeId'], ['literal', props.transportRouteIds]]
       : true,
   ])
-  for (const layer of ['nta-transit-density', 'nta-vehicle-halos', 'nta-vehicles', 'nta-vehicle-labels']) {
+  for (const layer of [
+    'nta-transit-density',
+    'nta-vehicle-halos',
+    'nta-vehicles',
+    'nta-vehicle-labels',
+  ]) {
     if (!map.getLayer(layer)) continue
-    const isLayerVisible = layer === 'nta-transit-density'
-      ? isProviderEnabled && props.transitDensityVisible
-      : isProviderEnabled
+    const isLayerVisible =
+      layer === 'nta-transit-density'
+        ? isProviderEnabled && props.transitDensityVisible
+        : isProviderEnabled
     map.setLayoutProperty(layer, 'visibility', isLayerVisible ? 'visible' : 'none')
     map.setFilter(layer, filter)
   }
@@ -958,12 +1180,19 @@ function emitViewportBounds() {
 function updateTransitDensityVisibility() {
   if (!mapReady.value || !map?.getLayer('nta-transit-density')) return
   const isProviderEnabled = props.movingFilters.providers.includes('nta-gtfs-realtime')
-  map.setLayoutProperty('nta-transit-density', 'visibility', isProviderEnabled && props.transitDensityVisible ? 'visible' : 'none')
+  map.setLayoutProperty(
+    'nta-transit-density',
+    'visibility',
+    isProviderEnabled && props.transitDensityVisible ? 'visible' : 'none',
+  )
 }
 
 function updateRoadTrafficVisibility() {
   if (!mapReady.value || !map) return
-  const visibility = props.roadTrafficVisible && mapboxAccessToken && props.timeContext.mode === 'live' ? 'visible' : 'none'
+  const visibility =
+    props.roadTrafficVisible && mapboxAccessToken && props.timeContext.mode === 'live'
+      ? 'visible'
+      : 'none'
   for (const layer of mapboxTrafficLayerIds) {
     if (map.getLayer(layer)) map.setLayoutProperty(layer, 'visibility', visibility)
   }
@@ -994,7 +1223,11 @@ function updateDisplayMode() {
 function updateTimeMode() {
   if (!mapReady.value || !map) return
   if (map.getLayer('incident-points')) {
-    map.setPaintProperty('incident-points', 'circle-opacity', props.timeContext.mode === 'replay' ? 0.72 : 0.92)
+    map.setPaintProperty(
+      'incident-points',
+      'circle-opacity',
+      props.timeContext.mode === 'replay' ? 0.72 : 0.92,
+    )
   }
   updateRoadTrafficVisibility()
   updateTransitStopsVisibility()
@@ -1002,14 +1235,21 @@ function updateTimeMode() {
 
 function updateTransitStopsVisibility() {
   if (!mapReady.value || !map) return
-  const visibility = props.transitStopsVisible && props.timeContext.mode === 'live' ? 'visible' : 'none'
+  const visibility =
+    props.transitStopsVisible && props.timeContext.mode === 'live' ? 'visible' : 'none'
   for (const layer of ['nta-stop-halos', 'nta-stop-icons']) {
     if (map.getLayer(layer)) map.setLayoutProperty(layer, 'visibility', visibility)
   }
 }
 
 function focusSpatialFilter() {
-  if (!mapReady.value || !map || !props.transportSpatialFilter || props.transportSpatialFilter.type === 'viewport') return
+  if (
+    !mapReady.value ||
+    !map ||
+    !props.transportSpatialFilter ||
+    props.transportSpatialFilter.type === 'viewport'
+  )
+    return
   map.fitBounds(
     [
       [props.transportSpatialFilter.west, props.transportSpatialFilter.south],
@@ -1061,38 +1301,91 @@ function applySelectionState(selection: AtlasSelection | null, selected: boolean
   if (selection.kind === 'incident') return
   if (selection.kind === 'transit-stop') {
     map.setFeatureState({ source: transitStopsSourceId, id: selection.featureId }, { selected })
-    map.setFeatureState({ source: selectedRouteStopsSourceId, id: selection.featureId }, { selected })
+    map.setFeatureState(
+      { source: selectedRouteStopsSourceId, id: selection.featureId },
+      { selected },
+    )
     return
   }
-  const source = selection.kind === 'moving'
-    ? movingSourceIds[selection.provider]
-    : sourceIds[selection.provider]
+  const source =
+    selection.kind === 'moving'
+      ? movingSourceIds[selection.provider]
+      : sourceIds[selection.provider]
   map.setFeatureState({ source, id: selection.featureId }, { selected })
 }
 
 function focusSelection(selection: AtlasSelection | null) {
   if (!mapReady.value || !map || !selection) return
-  const feature = selection.kind === 'incident'
-    ? props.incidentCollections[selection.provider]?.features.find((item) => item.properties.id === selection.featureId)
-    : selection.kind === 'moving'
-      ? props.movingCollections[selection.provider]?.features.find((item) => item.properties.id === selection.featureId)
-      : selection.kind === 'transit-stop'
-        ? props.transitStops.features.find((item) => item.properties.id === selection.featureId)
-        : props.collections[selection.provider]?.features.find((item) => item.properties.id === selection.featureId)
-  const coordinates = feature?.geometry.type === 'Point' ? feature.geometry.coordinates as [number, number] : undefined
-  if (coordinates) map.easeTo({ center: coordinates, zoom: Math.max(map.getZoom(), 13.8), duration: 650 })
+  const feature =
+    selection.kind === 'incident'
+      ? props.incidentCollections[selection.provider]?.features.find(
+          (item) => item.properties.id === selection.featureId,
+        )
+      : selection.kind === 'moving'
+        ? props.movingCollections[selection.provider]?.features.find(
+            (item) => item.properties.id === selection.featureId,
+          )
+        : selection.kind === 'transit-stop'
+          ? props.transitStops.features.find((item) => item.properties.id === selection.featureId)
+          : props.collections[selection.provider]?.features.find(
+              (item) => item.properties.id === selection.featureId,
+            )
+  const coordinates =
+    feature?.geometry.type === 'Point'
+      ? (feature.geometry.coordinates as [number, number])
+      : undefined
+  if (coordinates)
+    map.easeTo({ center: coordinates, zoom: Math.max(map.getZoom(), 13.8), duration: 650 })
 }
 
 function statusColorExpression() {
-  return ['match', ['get', 'status'], 'normal', '#2fbf71', 'warning', '#f6bd60', 'critical', '#f95738', 'offline', '#6c757d', 'unknown', '#9aa0a6', '#9aa0a6'] as mapboxgl.ExpressionSpecification
+  return [
+    'match',
+    ['get', 'status'],
+    'normal',
+    '#2fbf71',
+    'warning',
+    '#f6bd60',
+    'critical',
+    '#f95738',
+    'offline',
+    '#6c757d',
+    'unknown',
+    '#9aa0a6',
+    '#9aa0a6',
+  ] as mapboxgl.ExpressionSpecification
 }
 
 function severityColorExpression() {
-  return ['match', ['get', 'severity'], 'info', '#3da5d9', 'minor', '#f6bd60', 'major', '#ef8354', 'critical', '#f95738', '#9aa0a6'] as mapboxgl.ExpressionSpecification
+  return [
+    'match',
+    ['get', 'severity'],
+    'info',
+    '#3da5d9',
+    'minor',
+    '#f6bd60',
+    'major',
+    '#ef8354',
+    'critical',
+    '#f95738',
+    '#9aa0a6',
+  ] as mapboxgl.ExpressionSpecification
 }
 
 function scheduleColorExpression() {
-  return ['match', ['get', 'scheduleStatus'], 'early', '#b8a1ff', 'on-time', '#2fbf71', 'late', '#f95738', 'unknown', '#9aa0a6', '#9aa0a6'] as mapboxgl.ExpressionSpecification
+  return [
+    'match',
+    ['get', 'scheduleStatus'],
+    'early',
+    '#b8a1ff',
+    'on-time',
+    '#2fbf71',
+    'late',
+    '#f95738',
+    'unknown',
+    '#9aa0a6',
+    '#9aa0a6',
+  ] as mapboxgl.ExpressionSpecification
 }
 
 function unclusteredFilter() {
@@ -1100,7 +1393,10 @@ function unclusteredFilter() {
 }
 
 function allFilter(expressions: unknown[]) {
-  return ['all', ...expressions.filter((expression) => expression !== true)] as mapboxgl.FilterSpecification
+  return [
+    'all',
+    ...expressions.filter((expression) => expression !== true),
+  ] as mapboxgl.FilterSpecification
 }
 
 function emptyCollection(): AtlasFeatureCollection {
@@ -1123,7 +1419,10 @@ function emptyEtaRouteCollection(): GeoJSON.FeatureCollection<GeoJSON.LineString
   return { type: 'FeatureCollection', features: [] }
 }
 
-function emptySelectedRouteCollection(): GeoJSON.FeatureCollection<GeoJSON.LineString, { id: string; routeId?: string; routeLabel?: string; directionLabel?: string }> {
+function emptySelectedRouteCollection(): GeoJSON.FeatureCollection<
+  GeoJSON.LineString,
+  { id: string; routeId?: string; routeLabel?: string; directionLabel?: string }
+> {
   return { type: 'FeatureCollection', features: [] }
 }
 
@@ -1144,7 +1443,16 @@ function fallbackMapStyle(): mapboxgl.StyleSpecification {
       },
     },
     layers: [
-      { id: 'base', type: 'raster', source: 'osm', paint: { 'raster-saturation': -0.85, 'raster-contrast': -0.2, 'raster-brightness-max': 0.72 } },
+      {
+        id: 'base',
+        type: 'raster',
+        source: 'osm',
+        paint: {
+          'raster-saturation': -0.85,
+          'raster-contrast': -0.2,
+          'raster-brightness-max': 0.72,
+        },
+      },
     ],
   }
 }
@@ -1154,22 +1462,39 @@ function fallbackMapStyle(): mapboxgl.StyleSpecification {
   <div class="map-shell">
     <div ref="mapElement" class="map-canvas" />
     <div class="map-status" aria-live="polite">
-      <span>{{ timeContext.mode === 'live' ? 'Near real-time public data' : 'Historical replay' }}</span>
+      <span>{{
+        timeContext.mode === 'live' ? 'Near real-time public data' : 'Historical replay'
+      }}</span>
       <strong>{{ hasMapboxToken ? 'Mapbox basemap' : 'Local fallback' }}</strong>
     </div>
     <div v-if="timeContext.mode === 'replay'" class="replay-banner">
-      Replay {{ new Intl.DateTimeFormat('en-IE', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(timeContext.timestamp)) }}
+      Replay
+      {{
+        new Intl.DateTimeFormat('en-IE', { dateStyle: 'medium', timeStyle: 'short' }).format(
+          new Date(timeContext.timestamp),
+        )
+      }}
     </div>
     <div v-if="!mapboxAccessToken" class="map-config-warning" role="status">
       Add <code>VITE_MAPBOX_ACCESS_TOKEN</code> in <code>.env.local</code> for Mapbox basemap tiles.
     </div>
     <div class="data-attribution">
-      Data: Office of Public Works / WaterLevel.ie; Smart Dublin / Dublin City Council; Sonitus Systems; Environmental Protection Agency; National Transport Authority<span v-if="hasMapboxToken && roadTrafficVisible && timeContext.mode === 'live'">; Mapbox Traffic</span>
+      Data: Office of Public Works / WaterLevel.ie; Smart Dublin / Dublin City Council; Sonitus
+      Systems; Environmental Protection Agency; National Transport Authority<span
+        v-if="hasMapboxToken && roadTrafficVisible && timeContext.mode === 'live'"
+        >; Mapbox Traffic</span
+      >
     </div>
     <div class="map-legend" aria-label="Map legend">
-      <span v-if="hasMapboxToken && roadTrafficVisible && timeContext.mode === 'live'"><i class="legend-road-traffic-warning" />Road warning</span>
-      <span v-if="hasMapboxToken && roadTrafficVisible && timeContext.mode === 'live'"><i class="legend-road-traffic-heavy" />Road critical</span>
-      <span v-if="transitStopsVisible && timeContext.mode === 'live'"><i class="legend-bus-stop" />Bus stop</span>
+      <span v-if="hasMapboxToken && roadTrafficVisible && timeContext.mode === 'live'"
+        ><i class="legend-road-traffic-warning" />Road warning</span
+      >
+      <span v-if="hasMapboxToken && roadTrafficVisible && timeContext.mode === 'live'"
+        ><i class="legend-road-traffic-heavy" />Road critical</span
+      >
+      <span v-if="transitStopsVisible && timeContext.mode === 'live'"
+        ><i class="legend-bus-stop" />Bus stop</span
+      >
       <span v-if="displayMode === 'measurement'"><i class="legend-noise" />Noise</span>
       <span v-if="displayMode === 'measurement'"><i class="legend-air" />Air</span>
       <span v-if="displayMode === 'health'"><i class="legend-normal" />Normal</span>

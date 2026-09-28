@@ -45,13 +45,15 @@ export function adaptDublinBikes(input: DublinBikesGeoJson): AtlasFeatureCollect
 
 function deriveBikeStatus(properties: DublinBikesStationProperties): AtlasStatus {
   if (
-    properties.is_installed === undefined
-    || properties.is_renting === undefined
-    || properties.is_returning === undefined
-    || properties.num_bikes_available === undefined
-    || properties.num_docks_available === undefined
-  ) return 'unknown'
-  if (!properties.is_installed || !properties.is_renting || !properties.is_returning) return 'critical'
+    properties.is_installed === undefined ||
+    properties.is_renting === undefined ||
+    properties.is_returning === undefined ||
+    properties.num_bikes_available === undefined ||
+    properties.num_docks_available === undefined
+  )
+    return 'unknown'
+  if (!properties.is_installed || !properties.is_renting || !properties.is_returning)
+    return 'critical'
   if (properties.num_bikes_available === 0 || properties.num_docks_available === 0) return 'warning'
   return 'normal'
 }
@@ -66,5 +68,7 @@ function epochSecondsToIso(value?: number) {
 }
 
 function titleCase(value: string) {
-  return value.toLocaleLowerCase('en-IE').replace(/\b\w/g, (letter) => letter.toLocaleUpperCase('en-IE'))
+  return value
+    .toLocaleLowerCase('en-IE')
+    .replace(/\b\w/g, (letter) => letter.toLocaleUpperCase('en-IE'))
 }

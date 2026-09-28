@@ -26,7 +26,13 @@ export async function fetchNtaRouteIndex(): Promise<AtlasTransportRouteIndex> {
 function toRouteOption(route: NtaRouteResponse['routes'][number]): AtlasTransportRouteOption {
   const label = route.shortName || route.routeId
   const descriptionParts = [route.longName, route.operator].filter(Boolean)
-  const searchParts = [route.routeId, route.shortName, route.longName, route.operator, ...(route.headsigns ?? [])]
+  const searchParts = [
+    route.routeId,
+    route.shortName,
+    route.longName,
+    route.operator,
+    ...(route.headsigns ?? []),
+  ]
   return {
     routeId: route.routeId,
     label,

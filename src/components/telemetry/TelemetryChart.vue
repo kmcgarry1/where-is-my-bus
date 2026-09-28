@@ -13,7 +13,9 @@ const chartElement = ref<HTMLDivElement | null>(null)
 let chart: uPlot | null = null
 let resizeObserver: ResizeObserver | null = null
 
-const validReadings = computed(() => props.state.readings.filter((reading) => typeof reading.value === 'number'))
+const validReadings = computed(() =>
+  props.state.readings.filter((reading) => typeof reading.value === 'number'),
+)
 const summary = computed(() => {
   const values = validReadings.value.map((reading) => reading.value as number)
   if (!values.length) return null
@@ -50,31 +52,43 @@ function renderChart() {
     const data = chartData()
 
     chart?.destroy()
-    chart = new uPlot({
-      width,
-      height,
-      class: 'atlas-chart',
-      scales: { x: { time: true } },
-      axes: [
-        { stroke: '#aab8bd', grid: { stroke: 'rgba(229, 236, 239, 0.08)' } },
-        { stroke: '#aab8bd', grid: { stroke: 'rgba(229, 236, 239, 0.08)' }, label: props.metric.unit },
-      ],
-      series: [
-        {},
-        {
-          label: props.metric.label,
-          stroke: '#83d4c8',
-          width: 2,
-          points: { show: true, size: 5, stroke: '#f5f1e8', fill: '#83d4c8' },
-          spanGaps: false,
-          value: (_self, value) => value == null ? '-' : `${value.toFixed(props.metric?.decimals ?? 1)} ${props.metric?.unit ?? ''}`.trim(),
-        },
-      ],
-    }, data, chartElement.value)
+    chart = new uPlot(
+      {
+        width,
+        height,
+        class: 'atlas-chart',
+        scales: { x: { time: true } },
+        axes: [
+          { stroke: '#aab8bd', grid: { stroke: 'rgba(229, 236, 239, 0.08)' } },
+          {
+            stroke: '#aab8bd',
+            grid: { stroke: 'rgba(229, 236, 239, 0.08)' },
+            label: props.metric.unit,
+          },
+        ],
+        series: [
+          {},
+          {
+            label: props.metric.label,
+            stroke: '#83d4c8',
+            width: 2,
+            points: { show: true, size: 5, stroke: '#f5f1e8', fill: '#83d4c8' },
+            spanGaps: false,
+            value: (_self, value) =>
+              value == null
+                ? '-'
+                : `${value.toFixed(props.metric?.decimals ?? 1)} ${props.metric?.unit ?? ''}`.trim(),
+          },
+        ],
+      },
+      data,
+      chartElement.value,
+    )
 
     resizeObserver?.disconnect()
     resizeObserver = new ResizeObserver(() => {
-      if (chartElement.value && chart) chart.setSize({ width: chartElement.value.clientWidth || width, height })
+      if (chartElement.value && chart)
+        chart.setSize({ width: chartElement.value.clientWidth || width, height })
     })
     resizeObserver.observe(chartElement.value)
   })
@@ -82,11 +96,15 @@ function renderChart() {
 
 function chartData(): uPlot.AlignedData {
   const points = validReadings.value
-    .map((reading) => ({ time: Date.parse(reading.observedAt) / 1000, value: reading.value as number }))
+    .map((reading) => ({
+      time: Date.parse(reading.observedAt) / 1000,
+      value: reading.value as number,
+    }))
     .filter((point) => Number.isFinite(point.time) && Number.isFinite(point.value))
     .sort((a, b) => a.time - b.time)
 
-  if (points.length < 3) return [points.map((point) => point.time), points.map((point) => point.value)]
+  if (points.length < 3)
+    return [points.map((point) => point.time), points.map((point) => point.value)]
 
   const intervals = points
     .slice(1)
@@ -114,12 +132,16 @@ function chartData(): uPlot.AlignedData {
 
 <template>
   <section class="telemetry-history">
-    <div v-if="state.status === 'loading'" class="chart-state loading-state">Loading historical readings</div>
+    <div v-if="state.status === 'loading'" class="chart-state loading-state">
+      Loading historical readings
+    </div>
     <div v-else-if="state.status === 'error'" class="chart-state error-state">
       <strong>Historical readings unavailable</strong>
       <span>{{ state.error }}</span>
     </div>
-    <div v-else-if="state.status === 'empty'" class="chart-state">No readings available for this period.</div>
+    <div v-else-if="state.status === 'empty'" class="chart-state">
+      No readings available for this period.
+    </div>
     <div v-else ref="chartElement" class="chart-surface" />
 
     <div v-if="summary && metric" class="telemetry-stats">

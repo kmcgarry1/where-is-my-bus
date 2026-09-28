@@ -1,16 +1,61 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import type { AtlasAssetType, AtlasFilters, AtlasProviderId, AtlasSelection, AtlasStatus, ProviderState } from '../data/atlas.types'
+import type {
+  AtlasAssetType,
+  AtlasFilters,
+  AtlasProviderId,
+  AtlasSelection,
+  AtlasStatus,
+  ProviderState,
+} from '../data/atlas.types'
 import { deriveAssetHealthIncidents } from '../data/incidents/derivedIncidents'
-import type { AtlasIncidentCollection, AtlasIncidentFeature, AtlasIncidentFilters, AtlasIncidentProviderId, AtlasIncidentSeverity, AtlasIncidentStatus, IncidentProviderState } from '../data/incident.types'
-import { deriveMissingMovingBearings, interpolateMovingCollection } from '../data/moving/interpolation'
+import type {
+  AtlasIncidentCollection,
+  AtlasIncidentFeature,
+  AtlasIncidentFilters,
+  AtlasIncidentProviderId,
+  AtlasIncidentSeverity,
+  AtlasIncidentStatus,
+  IncidentProviderState,
+} from '../data/incident.types'
+import {
+  deriveMissingMovingBearings,
+  interpolateMovingCollection,
+} from '../data/moving/interpolation'
 import { predictArrivalAtStop, predictNextStopArrival } from '../data/moving/etaPredictor'
-import { recordedMovingCollectionForTime, recordedMovingReplayBounds, recordedMovingTrailMap } from '../data/moving/replay'
-import { featureMatchesTransportFilters, filterMovingCollectionBySpatialFilter } from '../data/moving/transportFilters'
+import {
+  recordedMovingCollectionForTime,
+  recordedMovingReplayBounds,
+  recordedMovingTrailMap,
+} from '../data/moving/replay'
+import {
+  featureMatchesTransportFilters,
+  filterMovingCollectionBySpatialFilter,
+} from '../data/moving/transportFilters'
 import { trailCollectionForVehicle, updateVehicleTrails } from '../data/moving/trails'
-import type { AtlasEtaPrediction, AtlasMovingAssetCollection, AtlasMovingAssetFeature, AtlasMovingFilters, AtlasMovingProviderId, AtlasMovingAssetType, AtlasStopArrival, AtlasStopArrivalsState, AtlasStopService, AtlasTransitStopCollection, AtlasTransportFilterState, AtlasTransportRouteIndex, AtlasTripContext, AtlasVehiclePositionObservation, AtlasVehicleTrailCollection, MovingProviderState } from '../data/movingAsset.types'
+import type {
+  AtlasEtaPrediction,
+  AtlasMovingAssetCollection,
+  AtlasMovingAssetFeature,
+  AtlasMovingFilters,
+  AtlasMovingProviderId,
+  AtlasMovingAssetType,
+  AtlasStopArrival,
+  AtlasStopArrivalsState,
+  AtlasStopService,
+  AtlasTransitStopCollection,
+  AtlasTransportFilterState,
+  AtlasTransportRouteIndex,
+  AtlasTripContext,
+  AtlasVehiclePositionObservation,
+  AtlasVehicleTrailCollection,
+  MovingProviderState,
+} from '../data/movingAsset.types'
 import { atlasProviders, emptyProviderState } from '../data/providers/providerRegistry'
 import { emptyIncidentProviderState, incidentProviders } from '../data/providers/incidentRegistry'
-import { emptyNtaDiagnosticsState, fetchNtaDiagnostics } from '../data/providers/ntaGtfsRealtime/diagnostics'
+import {
+  emptyNtaDiagnosticsState,
+  fetchNtaDiagnostics,
+} from '../data/providers/ntaGtfsRealtime/diagnostics'
 import { fetchNtaRouteIndex } from '../data/providers/ntaGtfsRealtime/routes'
 import { fetchNtaStopServices } from '../data/providers/ntaGtfsRealtime/stopServices'
 import { fetchNtaTransitStops } from '../data/providers/ntaGtfsRealtime/stops'
@@ -20,9 +65,18 @@ import type { AtlasTimeContext } from '../data/time.types'
 import { recordEtaPrediction } from '../data/transportHistoryClient'
 
 export const providerIds: AtlasProviderId[] = ['opw-water', 'dublin-bikes', 'dcc-sonitus']
-export const assetTypes: AtlasAssetType[] = ['water-gauge', 'bike-station', 'noise-monitor', 'air-quality-monitor']
+export const assetTypes: AtlasAssetType[] = [
+  'water-gauge',
+  'bike-station',
+  'noise-monitor',
+  'air-quality-monitor',
+]
 export const statuses: AtlasStatus[] = ['normal', 'warning', 'critical', 'offline', 'unknown']
-export const incidentProviderIds: AtlasIncidentProviderId[] = ['epa-bathing-water', 'nta-gtfs-realtime', 'atlas-derived']
+export const incidentProviderIds: AtlasIncidentProviderId[] = [
+  'epa-bathing-water',
+  'nta-gtfs-realtime',
+  'atlas-derived',
+]
 export const incidentSeverities: AtlasIncidentSeverity[] = ['info', 'minor', 'major', 'critical']
 export const incidentStatuses: AtlasIncidentStatus[] = ['active', 'monitoring', 'resolved']
 export const movingProviderIds: AtlasMovingProviderId[] = ['nta-gtfs-realtime']
@@ -45,8 +99,12 @@ export function useOperations() {
   })
   const selected = ref<AtlasSelection | null>(null)
   const providers = ref<ProviderState[]>(atlasProviders.map(emptyProviderState))
-  const incidentProviderStates = ref<IncidentProviderState[]>(incidentProviders.map(emptyIncidentProviderState))
-  const movingProviderStates = ref<MovingProviderState[]>(movingProviders.map(emptyMovingProviderState))
+  const incidentProviderStates = ref<IncidentProviderState[]>(
+    incidentProviders.map(emptyIncidentProviderState),
+  )
+  const movingProviderStates = ref<MovingProviderState[]>(
+    movingProviders.map(emptyMovingProviderState),
+  )
   const ntaDiagnosticsState = ref(emptyNtaDiagnosticsState())
   const transportRouteIndex = ref<AtlasTransportRouteIndex>({ source: 'unavailable', routes: [] })
   const transportRouteIndexLoading = ref(false)
@@ -57,7 +115,11 @@ export function useOperations() {
   const selectedEtaPrediction = ref<AtlasEtaPrediction | null>(null)
   const selectedEtaPredictionLoading = ref(false)
   const selectedEtaPredictionError = ref<string>()
-  const selectedStopArrivals = ref<AtlasStopArrivalsState>({ services: [], arrivals: [], loading: false })
+  const selectedStopArrivals = ref<AtlasStopArrivalsState>({
+    services: [],
+    arrivals: [],
+    loading: false,
+  })
   const transportFilters = ref<AtlasTransportFilterState>({
     routeIds: [],
   })
@@ -86,19 +148,27 @@ export function useOperations() {
   let replayTimer: number | null = null
   let etaRequestSequence = 0
 
-  const providerCollections = computed(() => Object.fromEntries(
-    providers.value.map((provider) => [provider.id, provider.collection]),
-  ) as Record<AtlasProviderId, ProviderState['collection']>)
+  const providerCollections = computed(
+    () =>
+      Object.fromEntries(
+        providers.value.map((provider) => [provider.id, provider.collection]),
+      ) as Record<AtlasProviderId, ProviderState['collection']>,
+  )
 
-  const allFeatures = computed(() => providers.value.flatMap((provider) => provider.collection.features))
+  const allFeatures = computed(() =>
+    providers.value.flatMap((provider) => provider.collection.features),
+  )
   const derivedIncidents = computed(() => deriveAssetHealthIncidents(allFeatures.value))
   const allIncidents = computed(() => [
     ...incidentProviderStates.value.flatMap((provider) => provider.collection.features),
     ...derivedIncidents.value.features,
   ])
-  const liveMovingCollections = computed(() => Object.fromEntries(
-    movingProviderStates.value.map((provider) => [provider.id, provider.collection]),
-  ) as Record<AtlasMovingProviderId, AtlasMovingAssetCollection>)
+  const liveMovingCollections = computed(
+    () =>
+      Object.fromEntries(
+        movingProviderStates.value.map((provider) => [provider.id, provider.collection]),
+      ) as Record<AtlasMovingProviderId, AtlasMovingAssetCollection>,
+  )
   const movingCollections = computed(() => {
     if (timeContext.value.mode === 'replay') {
       return {
@@ -108,107 +178,165 @@ export function useOperations() {
     }
     return liveMovingCollections.value
   })
-  const spatialMovingCollections = computed(() => Object.fromEntries(
-    movingProviderIds.map((providerId) => [
-      providerId,
-      filterMovingCollectionBySpatialFilter(
-        movingCollections.value[providerId],
-        transportFilters.value.spatialFilter,
-        viewportBounds.value,
-      ),
-    ]),
-  ) as Record<AtlasMovingProviderId, AtlasMovingAssetCollection>)
-  const allMovingFeatures = computed(() => Object.values(spatialMovingCollections.value).flatMap((collection) => collection.features))
-  const totalMovingFeatureCount = computed(() => Object.values(movingCollections.value).reduce((total, collection) => total + collection.features.length, 0))
-  const visibleMovingFeatures = computed(() => allMovingFeatures.value.filter((feature) => {
-    return movingFilters.value.providers.includes(feature.properties.provider)
-      && movingFilters.value.assetTypes.includes(feature.properties.assetType)
-      && movingFilters.value.statuses.includes(feature.properties.status)
-      && featureMatchesTransportFilters(feature, transportFilters.value.routeIds)
-  }))
+  const spatialMovingCollections = computed(
+    () =>
+      Object.fromEntries(
+        movingProviderIds.map((providerId) => [
+          providerId,
+          filterMovingCollectionBySpatialFilter(
+            movingCollections.value[providerId],
+            transportFilters.value.spatialFilter,
+            viewportBounds.value,
+          ),
+        ]),
+      ) as Record<AtlasMovingProviderId, AtlasMovingAssetCollection>,
+  )
+  const allMovingFeatures = computed(() =>
+    Object.values(spatialMovingCollections.value).flatMap((collection) => collection.features),
+  )
+  const totalMovingFeatureCount = computed(() =>
+    Object.values(movingCollections.value).reduce(
+      (total, collection) => total + collection.features.length,
+      0,
+    ),
+  )
+  const visibleMovingFeatures = computed(() =>
+    allMovingFeatures.value.filter((feature) => {
+      return (
+        movingFilters.value.providers.includes(feature.properties.provider) &&
+        movingFilters.value.assetTypes.includes(feature.properties.assetType) &&
+        movingFilters.value.statuses.includes(feature.properties.status) &&
+        featureMatchesTransportFilters(feature, transportFilters.value.routeIds)
+      )
+    }),
+  )
 
-  const visibleFeatures = computed(() => allFeatures.value.filter((feature) => {
-    return filters.value.providers.includes(feature.properties.provider)
-      && filters.value.assetTypes.includes(feature.properties.assetType)
-      && filters.value.statuses.includes(feature.properties.status)
-  }))
+  const visibleFeatures = computed(() =>
+    allFeatures.value.filter((feature) => {
+      return (
+        filters.value.providers.includes(feature.properties.provider) &&
+        filters.value.assetTypes.includes(feature.properties.assetType) &&
+        filters.value.statuses.includes(feature.properties.status)
+      )
+    }),
+  )
 
   const selectedFeature = computed(() => {
     if (!selected.value || selected.value.kind !== 'asset') return null
-    return allFeatures.value.find((feature) => {
-      return feature.properties.provider === selected.value?.provider
-        && feature.properties.id === selected.value?.featureId
-    }) ?? null
+    return (
+      allFeatures.value.find((feature) => {
+        return (
+          feature.properties.provider === selected.value?.provider &&
+          feature.properties.id === selected.value?.featureId
+        )
+      }) ?? null
+    )
   })
 
   const selectedIncident = computed(() => {
     if (!selected.value || selected.value.kind !== 'incident') return null
-    return allIncidents.value.find((incident) => {
-      return incident.properties.provider === selected.value?.provider
-        && incident.properties.id === selected.value?.featureId
-    }) ?? null
+    return (
+      allIncidents.value.find((incident) => {
+        return (
+          incident.properties.provider === selected.value?.provider &&
+          incident.properties.id === selected.value?.featureId
+        )
+      }) ?? null
+    )
   })
 
   const selectedMovingFeature = computed(() => {
     if (!selected.value || selected.value.kind !== 'moving') return null
-    return allMovingFeatures.value.find((feature) => {
-      return feature.properties.provider === selected.value?.provider
-        && feature.properties.id === selected.value?.featureId
-    }) ?? null
+    return (
+      allMovingFeatures.value.find((feature) => {
+        return (
+          feature.properties.provider === selected.value?.provider &&
+          feature.properties.id === selected.value?.featureId
+        )
+      }) ?? null
+    )
   })
 
   const selectedTransitStop = computed(() => {
     if (!selected.value || selected.value.kind !== 'transit-stop') return null
-    return transitStops.value.features.find((feature) => feature.properties.id === selected.value?.featureId) ?? null
+    return (
+      transitStops.value.features.find(
+        (feature) => feature.properties.id === selected.value?.featureId,
+      ) ?? null
+    )
   })
 
-  const selectedVehicleTrail = computed<AtlasVehicleTrailCollection>(() => trailCollectionForVehicle(
-    selected.value?.kind === 'moving' ? selected.value.featureId : undefined,
-    timeContext.value.mode === 'replay' ? recordedMovingTrailMap(timeContext.value.timestamp) : vehicleTrails.value,
-  ))
+  const selectedVehicleTrail = computed<AtlasVehicleTrailCollection>(() =>
+    trailCollectionForVehicle(
+      selected.value?.kind === 'moving' ? selected.value.featureId : undefined,
+      timeContext.value.mode === 'replay'
+        ? recordedMovingTrailMap(timeContext.value.timestamp)
+        : vehicleTrails.value,
+    ),
+  )
 
   const replayTimelineBounds = computed(() => {
     const movingBounds = recordedMovingReplayBounds()
-    const incidentTimes = allIncidents.value.flatMap((incident) => [
-      Date.parse(incident.properties.startedAt),
-      incident.properties.endedAt ? Date.parse(incident.properties.endedAt) : NaN,
-    ]).filter(Number.isFinite)
+    const incidentTimes = allIncidents.value
+      .flatMap((incident) => [
+        Date.parse(incident.properties.startedAt),
+        incident.properties.endedAt ? Date.parse(incident.properties.endedAt) : NaN,
+      ])
+      .filter(Number.isFinite)
     return {
       min: Math.min(movingBounds.min, ...incidentTimes),
       max: Math.max(Date.now(), movingBounds.max, ...incidentTimes),
     }
   })
 
-  const timeScopedIncidents = computed(() => allIncidents.value.flatMap((incident) => {
-    const reconstructed = incidentForTime(incident, timeContext.value)
-    return reconstructed ? [reconstructed] : []
-  }))
+  const timeScopedIncidents = computed(() =>
+    allIncidents.value.flatMap((incident) => {
+      const reconstructed = incidentForTime(incident, timeContext.value)
+      return reconstructed ? [reconstructed] : []
+    }),
+  )
 
-  const visibleIncidents = computed(() => timeScopedIncidents.value.filter((incident) => {
-    return incidentFilters.value.providers.includes(incident.properties.provider)
-      && incidentFilters.value.severities.includes(incident.properties.severity)
-      && incidentFilters.value.statuses.includes(incident.properties.status)
-  }))
+  const visibleIncidents = computed(() =>
+    timeScopedIncidents.value.filter((incident) => {
+      return (
+        incidentFilters.value.providers.includes(incident.properties.provider) &&
+        incidentFilters.value.severities.includes(incident.properties.severity) &&
+        incidentFilters.value.statuses.includes(incident.properties.status)
+      )
+    }),
+  )
 
-  const incidentCollections = computed(() => Object.fromEntries(
-    incidentProviderIds.map((providerId) => [
-      providerId,
-      {
-        type: 'FeatureCollection',
-        features: visibleIncidents.value.filter((incident) => incident.properties.provider === providerId),
-      },
-    ]),
-  ) as Record<AtlasIncidentProviderId, AtlasIncidentCollection>)
+  const incidentCollections = computed(
+    () =>
+      Object.fromEntries(
+        incidentProviderIds.map((providerId) => [
+          providerId,
+          {
+            type: 'FeatureCollection',
+            features: visibleIncidents.value.filter(
+              (incident) => incident.properties.provider === providerId,
+            ),
+          },
+        ]),
+      ) as Record<AtlasIncidentProviderId, AtlasIncidentCollection>,
+  )
 
   const visibleFeatureCount = computed(() => visibleFeatures.value.length)
-  const warningCount = computed(() => visibleFeatures.value.filter((feature) => feature.properties.status === 'warning').length)
-  const criticalCount = computed(() => visibleFeatures.value.filter((feature) => feature.properties.status === 'critical').length)
+  const warningCount = computed(
+    () => visibleFeatures.value.filter((feature) => feature.properties.status === 'warning').length,
+  )
+  const criticalCount = computed(
+    () =>
+      visibleFeatures.value.filter((feature) => feature.properties.status === 'critical').length,
+  )
   const visibleIncidentCount = computed(() => visibleIncidents.value.length)
   const movingFeatureCount = computed(() => visibleMovingFeatures.value.length)
 
   watch(visibleMovingFeatures, (features) => {
     if (selected.value?.kind !== 'moving') return
-    const stillVisible = features.some((feature) => feature.properties.id === selected.value?.featureId)
+    const stillVisible = features.some(
+      (feature) => feature.properties.id === selected.value?.featureId,
+    )
     if (!stillVisible) selected.value = null
   })
 
@@ -217,14 +345,21 @@ export function useOperations() {
     void updateSelectedStopArrivals()
   })
 
-  watch(() => timeContext.value.mode, () => {
-    void updateSelectedEtaPrediction()
-    void updateSelectedStopArrivals()
-  })
+  watch(
+    () => timeContext.value.mode,
+    () => {
+      void updateSelectedEtaPrediction()
+      void updateSelectedStopArrivals()
+    },
+  )
 
-  watch(() => transportFilters.value.routeIds, () => {
-    void updateSelectedStopArrivals()
-  }, { deep: true })
+  watch(
+    () => transportFilters.value.routeIds,
+    () => {
+      void updateSelectedStopArrivals()
+    },
+    { deep: true },
+  )
 
   async function syncProvider(providerId: AtlasProviderId) {
     const provider = atlasProviders.find((item) => item.id === providerId)
@@ -292,10 +427,16 @@ export function useOperations() {
     state.health.lastAttempt = new Date().toISOString()
 
     try {
-      const collection = deriveMissingMovingBearings(state.collection, await provider.fetchMovingAssets())
+      const collection = deriveMissingMovingBearings(
+        state.collection,
+        await provider.fetchMovingAssets(),
+      )
       animateMovingProviderCollection(providerId, state, collection)
       vehicleTrails.value = updateVehicleTrails(vehicleTrails.value, collection.features)
-      vehiclePositionHistory.value = updateVehiclePositionHistory(vehiclePositionHistory.value, collection.features)
+      vehiclePositionHistory.value = updateVehiclePositionHistory(
+        vehiclePositionHistory.value,
+        collection.features,
+      )
       void updateSelectedEtaPrediction(collection)
       void updateSelectedStopArrivals(collection)
       state.health = {
@@ -344,7 +485,8 @@ export function useOperations() {
     try {
       transportRouteIndex.value = await fetchNtaRouteIndex()
     } catch (error) {
-      transportRouteIndexError.value = error instanceof Error ? error.message : 'NTA route index request failed'
+      transportRouteIndexError.value =
+        error instanceof Error ? error.message : 'NTA route index request failed'
     } finally {
       transportRouteIndexLoading.value = false
     }
@@ -372,8 +514,10 @@ export function useOperations() {
       return
     }
 
-    const vehicle = latestCollection?.features.find((feature) => feature.properties.id === selected.value?.featureId)
-      ?? selectedMovingFeature.value
+    const vehicle =
+      latestCollection?.features.find(
+        (feature) => feature.properties.id === selected.value?.featureId,
+      ) ?? selectedMovingFeature.value
     if (!vehicle) {
       selectedEtaPrediction.value = null
       selectedEtaPredictionError.value = undefined
@@ -392,11 +536,13 @@ export function useOperations() {
         recentPositions: vehiclePositionHistory.value.get(vehicle.properties.id) ?? [],
         now: new Date().toISOString(),
       })
-      if (selectedEtaPrediction.value.status === 'available') void recordEtaPrediction(selectedEtaPrediction.value)
+      if (selectedEtaPrediction.value.status === 'available')
+        void recordEtaPrediction(selectedEtaPrediction.value)
     } catch (error) {
       if (requestSequence !== etaRequestSequence) return
       selectedEtaPrediction.value = null
-      selectedEtaPredictionError.value = error instanceof Error ? error.message : 'ETA prediction failed'
+      selectedEtaPredictionError.value =
+        error instanceof Error ? error.message : 'ETA prediction failed'
     } finally {
       if (requestSequence === etaRequestSequence) selectedEtaPredictionLoading.value = false
     }
@@ -407,15 +553,26 @@ export function useOperations() {
       selectedStopArrivals.value = { services: [], arrivals: [], loading: false }
       return
     }
-    const stop = transitStops.value.features.find((feature) => feature.properties.id === selected.value?.featureId)
+    const stop = transitStops.value.features.find(
+      (feature) => feature.properties.id === selected.value?.featureId,
+    )
     if (!stop) {
       selectedStopArrivals.value = { services: [], arrivals: [], loading: false }
       return
     }
 
-    selectedStopArrivals.value = { ...selectedStopArrivals.value, stopId: stop.properties.stopId, loading: true, error: undefined }
+    selectedStopArrivals.value = {
+      ...selectedStopArrivals.value,
+      stopId: stop.properties.stopId,
+      loading: true,
+      error: undefined,
+    }
     try {
-      const services = await stopServicesForStop(stop.properties.stopId, transportFilters.value.routeIds, stopServicesCache)
+      const services = await stopServicesForStop(
+        stop.properties.stopId,
+        transportFilters.value.routeIds,
+        stopServicesCache,
+      )
       const arrivals = await arrivalsForStop(
         stop.properties.stopId,
         services,
@@ -449,23 +606,31 @@ export function useOperations() {
     void syncTransportRouteIndex()
     void syncTransitStops()
     for (const provider of atlasProviders) {
-      timers.push(window.setInterval(() => {
-        void syncProvider(provider.id)
-      }, provider.refreshIntervalMs))
+      timers.push(
+        window.setInterval(() => {
+          void syncProvider(provider.id)
+        }, provider.refreshIntervalMs),
+      )
     }
     for (const provider of incidentProviders) {
-      timers.push(window.setInterval(() => {
-        void syncIncidentProvider(provider.id)
-      }, provider.refreshIntervalMs))
+      timers.push(
+        window.setInterval(() => {
+          void syncIncidentProvider(provider.id)
+        }, provider.refreshIntervalMs),
+      )
     }
     for (const provider of movingProviders) {
-      timers.push(window.setInterval(() => {
-        void syncMovingProvider(provider.id)
-      }, provider.refreshIntervalMs))
+      timers.push(
+        window.setInterval(() => {
+          void syncMovingProvider(provider.id)
+        }, provider.refreshIntervalMs),
+      )
     }
-    timers.push(window.setInterval(() => {
-      void syncNtaDiagnostics()
-    }, 60 * 1000))
+    timers.push(
+      window.setInterval(() => {
+        void syncNtaDiagnostics()
+      }, 60 * 1000),
+    )
   }
 
   function stopProviderSync() {
@@ -475,13 +640,19 @@ export function useOperations() {
     stopReplay()
   }
 
-  function animateMovingProviderCollection(providerId: AtlasMovingProviderId, state: MovingProviderState, target: AtlasMovingAssetCollection) {
+  function animateMovingProviderCollection(
+    providerId: AtlasMovingProviderId,
+    state: MovingProviderState,
+    target: AtlasMovingAssetCollection,
+  ) {
     stopMovingAnimation(providerId)
     const source = state.collection
     const hasPreviousFeatures = source.features.length > 0
-    const canAnimate = hasPreviousFeatures && target.features.some((feature) => (
-      source.features.some((previous) => previous.properties.id === feature.properties.id)
-    ))
+    const canAnimate =
+      hasPreviousFeatures &&
+      target.features.some((feature) =>
+        source.features.some((previous) => previous.properties.id === feature.properties.id),
+      )
     if (!canAnimate) {
       state.collection = target
       return
@@ -523,7 +694,10 @@ export function useOperations() {
     }
   }
 
-  function toggleIncidentFilter<T extends keyof AtlasIncidentFilters>(key: T, value: AtlasIncidentFilters[T][number]) {
+  function toggleIncidentFilter<T extends keyof AtlasIncidentFilters>(
+    key: T,
+    value: AtlasIncidentFilters[T][number],
+  ) {
     const current = incidentFilters.value[key] as string[]
     incidentFilters.value = {
       ...incidentFilters.value,
@@ -533,7 +707,10 @@ export function useOperations() {
     }
   }
 
-  function toggleMovingFilter<T extends keyof AtlasMovingFilters>(key: T, value: AtlasMovingFilters[T][number]) {
+  function toggleMovingFilter<T extends keyof AtlasMovingFilters>(
+    key: T,
+    value: AtlasMovingFilters[T][number],
+  ) {
     const current = movingFilters.value[key] as string[]
     movingFilters.value = {
       ...movingFilters.value,
@@ -557,7 +734,14 @@ export function useOperations() {
     }
   }
 
-  function setTransportRegionFilter(region: { id: string; label: string; west: number; south: number; east: number; north: number }) {
+  function setTransportRegionFilter(region: {
+    id: string
+    label: string
+    west: number
+    south: number
+    east: number
+    north: number
+  }) {
     transportFilters.value = {
       ...transportFilters.value,
       spatialFilter: { type: 'region', ...region },
@@ -582,7 +766,12 @@ export function useOperations() {
     transportFilters.value = { routeIds: [] }
   }
 
-  function setTransportViewportBounds(bounds: { west: number; south: number; east: number; north: number }) {
+  function setTransportViewportBounds(bounds: {
+    west: number
+    south: number
+    east: number
+    north: number
+  }) {
     viewportBounds.value = bounds
   }
 
@@ -604,7 +793,12 @@ export function useOperations() {
   }
 
   function setReplayTimestamp(timestamp: string) {
-    timeContext.value = { ...timeContext.value, mode: 'replay', timestamp, playing: timeContext.value.playing }
+    timeContext.value = {
+      ...timeContext.value,
+      mode: 'replay',
+      timestamp,
+      playing: timeContext.value.playing,
+    }
   }
 
   function enterReplay() {
@@ -748,7 +942,9 @@ async function arrivalsForStop(
   const vehicles = collection.features.filter((vehicle) => vehicle.properties.tripId)
   for (const service of services) {
     const tripIds = new Set(service.tripIds)
-    const candidates = vehicles.filter((vehicle) => vehicle.properties.tripId && tripIds.has(vehicle.properties.tripId))
+    const candidates = vehicles.filter(
+      (vehicle) => vehicle.properties.tripId && tripIds.has(vehicle.properties.tripId),
+    )
     const predictions: AtlasStopArrival[] = []
     for (const vehicle of candidates) {
       const tripContext = await tripContextForVehicle(vehicle, tripContexts)
@@ -778,17 +974,31 @@ async function arrivalsForStop(
         predictionSource: 'atlas',
       })
     }
-    const best = predictions.sort((left, right) => Date.parse(left.displayArrival ?? '') - Date.parse(right.displayArrival ?? ''))[0]
+    const best = predictions.sort(
+      (left, right) =>
+        Date.parse(left.displayArrival ?? '') - Date.parse(right.displayArrival ?? ''),
+    )[0]
     arrivals.push(best ?? scheduledStopArrival(stopId, service, now))
   }
   return arrivals
     .filter((arrival) => arrival.tripId)
-    .sort((left, right) => Date.parse(left.displayArrival ?? left.scheduledArrival ?? '') - Date.parse(right.displayArrival ?? right.scheduledArrival ?? ''))
+    .sort(
+      (left, right) =>
+        Date.parse(left.displayArrival ?? left.scheduledArrival ?? '') -
+        Date.parse(right.displayArrival ?? right.scheduledArrival ?? ''),
+    )
     .slice(0, 24)
 }
 
-function scheduledStopArrival(stopId: string, service: AtlasStopService, now: string): AtlasStopArrival {
-  const scheduledArrival = service.scheduledArrivalSeconds === undefined ? undefined : serviceDayIso(now, service.scheduledArrivalSeconds)
+function scheduledStopArrival(
+  stopId: string,
+  service: AtlasStopService,
+  now: string,
+): AtlasStopArrival {
+  const scheduledArrival =
+    service.scheduledArrivalSeconds === undefined
+      ? undefined
+      : serviceDayIso(now, service.scheduledArrivalSeconds)
   return {
     stopId,
     routeId: service.routeId,
@@ -814,12 +1024,24 @@ function easeOutCubic(value: number) {
   return 1 - (1 - value) ** 3
 }
 
-function incidentForTime(incident: AtlasIncidentFeature, timeContext: AtlasTimeContext): AtlasIncidentFeature | null {
-  if (timeContext.mode === 'live') return incident.properties.status === 'resolved' ? null : incident
+function incidentForTime(
+  incident: AtlasIncidentFeature,
+  timeContext: AtlasTimeContext,
+): AtlasIncidentFeature | null {
+  if (timeContext.mode === 'live')
+    return incident.properties.status === 'resolved' ? null : incident
   const timestamp = Date.parse(timeContext.timestamp)
   const startedAt = Date.parse(incident.properties.startedAt)
-  const endedAt = incident.properties.endedAt ? Date.parse(incident.properties.endedAt) : Number.POSITIVE_INFINITY
-  if (!Number.isFinite(timestamp) || !Number.isFinite(startedAt) || timestamp < startedAt || timestamp > endedAt) return null
+  const endedAt = incident.properties.endedAt
+    ? Date.parse(incident.properties.endedAt)
+    : Number.POSITIVE_INFINITY
+  if (
+    !Number.isFinite(timestamp) ||
+    !Number.isFinite(startedAt) ||
+    timestamp < startedAt ||
+    timestamp > endedAt
+  )
+    return null
   return {
     ...incident,
     properties: {
@@ -843,9 +1065,14 @@ function updateVehiclePositionHistory(
     const [longitude, latitude] = vehicle.geometry.coordinates as [number, number]
     const existing = next.get(id) ?? []
     const latest = existing.at(-1)
-    const duplicate = latest?.observedAt === observedAt
-      || (latest?.longitude === longitude && latest?.latitude === latitude && Math.abs(Date.parse(latest.observedAt) - observedMs) < 1000)
-    const retained = existing.filter((observation) => now - Date.parse(observation.observedAt) <= vehicleHistoryMs)
+    const duplicate =
+      latest?.observedAt === observedAt ||
+      (latest?.longitude === longitude &&
+        latest?.latitude === latitude &&
+        Math.abs(Date.parse(latest.observedAt) - observedMs) < 1000)
+    const retained = existing.filter(
+      (observation) => now - Date.parse(observation.observedAt) <= vehicleHistoryMs,
+    )
     if (!duplicate) retained.push({ vehicleId: id, longitude, latitude, observedAt })
     next.set(id, retained.slice(-maxVehicleHistoryPoints))
   }

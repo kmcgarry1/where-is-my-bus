@@ -8,7 +8,15 @@ export type AtlasScheduleStatus = 'early' | 'on-time' | 'late' | 'unknown'
 export type AtlasSpatialFilter =
   | { type: 'viewport' }
   | { type: 'bounds'; west: number; south: number; east: number; north: number }
-  | { type: 'region'; id: string; label: string; west: number; south: number; east: number; north: number }
+  | {
+      type: 'region'
+      id: string
+      label: string
+      west: number
+      south: number
+      east: number
+      north: number
+    }
 
 export interface AtlasTransportRouteOption {
   routeId: string
@@ -55,7 +63,8 @@ export type AtlasTransitStopCollection = FeatureCollection<Point, AtlasTransitSt
 
 export type AtlasEtaPredictionConfidence = 'high' | 'medium' | 'low'
 export type AtlasEtaPredictionStatus = 'available' | 'unavailable'
-export type AtlasEtaPredictionMethod = 'route-progress-blend' | 'provider-trip-update' | 'schedule-baseline' | 'unavailable'
+export type AtlasEtaPredictionMethod =
+  'route-progress-blend' | 'provider-trip-update' | 'schedule-baseline' | 'unavailable'
 
 export interface AtlasEtaPredictionEvidence {
   realtimePositionAgeSeconds?: number
@@ -91,7 +100,10 @@ export interface AtlasEtaPrediction {
   method: AtlasEtaPredictionMethod
   evidence: AtlasEtaPredictionEvidence
   remainingRoute?: Feature<LineString, { id: string }>
-  routeFeature?: Feature<LineString, { id: string; routeId?: string; routeLabel?: string; directionLabel?: string }>
+  routeFeature?: Feature<
+    LineString,
+    { id: string; routeId?: string; routeLabel?: string; directionLabel?: string }
+  >
   routeStops?: AtlasTransitStopCollection
   nextStopFeature?: AtlasTransitStopFeature
 }

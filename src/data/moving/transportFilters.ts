@@ -1,16 +1,33 @@
-import type { AtlasMovingAssetCollection, AtlasMovingAssetFeature, AtlasSpatialFilter, AtlasTransportRegion, AtlasTransportRouteOption } from '../movingAsset.types'
+import type {
+  AtlasMovingAssetCollection,
+  AtlasMovingAssetFeature,
+  AtlasSpatialFilter,
+  AtlasTransportRegion,
+  AtlasTransportRouteOption,
+} from '../movingAsset.types'
 
 export const transportRegions: AtlasTransportRegion[] = [
   { id: 'dublin', label: 'Dublin City', west: -6.42, south: 53.24, east: -6.05, north: 53.43 },
   { id: 'cork', label: 'Cork City', west: -8.62, south: 51.82, east: -8.33, north: 51.98 },
   { id: 'galway', label: 'Galway City', west: -9.18, south: 53.23, east: -8.91, north: 53.34 },
   { id: 'limerick', label: 'Limerick City', west: -8.75, south: 52.59, east: -8.52, north: 52.72 },
-  { id: 'waterford', label: 'Waterford City', west: -7.18, south: 52.21, east: -6.98, north: 52.31 },
+  {
+    id: 'waterford',
+    label: 'Waterford City',
+    west: -7.18,
+    south: 52.21,
+    east: -6.98,
+    north: 52.31,
+  },
 ]
 
 // Picks the closest defined region to a point, but only if it's plausibly nearby
 // (within ~65km); otherwise callers should fall back to the nationwide view.
-export function nearestTransportRegion(longitude: number, latitude: number, maxDistanceDegrees = 0.6): AtlasTransportRegion | undefined {
+export function nearestTransportRegion(
+  longitude: number,
+  latitude: number,
+  maxDistanceDegrees = 0.6,
+): AtlasTransportRegion | undefined {
   let closest: AtlasTransportRegion | undefined
   let closestDistance = Infinity
   for (const region of transportRegions) {
@@ -31,7 +48,11 @@ export function searchRouteOptions(routes: AtlasTransportRouteOption[], query: s
   return routes
     .map((route) => ({ route, score: routeMatchScore(route, normalized) }))
     .filter((entry) => entry.score > 0)
-    .sort((left, right) => right.score - left.score || left.route.label.localeCompare(right.route.label, 'en', { numeric: true }))
+    .sort(
+      (left, right) =>
+        right.score - left.score ||
+        left.route.label.localeCompare(right.route.label, 'en', { numeric: true }),
+    )
     .slice(0, limit)
     .map((entry) => entry.route)
 }
@@ -43,7 +64,11 @@ type Bounds = {
   north: number
 }
 
-export function filterMovingCollectionBySpatialFilter(collection: AtlasMovingAssetCollection, spatialFilter?: AtlasSpatialFilter, viewportBounds?: Bounds): AtlasMovingAssetCollection {
+export function filterMovingCollectionBySpatialFilter(
+  collection: AtlasMovingAssetCollection,
+  spatialFilter?: AtlasSpatialFilter,
+  viewportBounds?: Bounds,
+): AtlasMovingAssetCollection {
   if (!spatialFilter) return collection
   const bounds = spatialBounds(spatialFilter, viewportBounds)
   if (!bounds) return collection
@@ -53,7 +78,10 @@ export function filterMovingCollectionBySpatialFilter(collection: AtlasMovingAss
   }
 }
 
-export function featureMatchesTransportFilters(feature: AtlasMovingAssetFeature, routeIds: string[]) {
+export function featureMatchesTransportFilters(
+  feature: AtlasMovingAssetFeature,
+  routeIds: string[],
+) {
   return !routeIds.length || routeIds.includes(feature.properties.routeId ?? '')
 }
 
@@ -69,7 +97,12 @@ export function spatialBounds(filter: AtlasSpatialFilter, viewportBounds?: Bound
 
 function featureInsideBounds(feature: AtlasMovingAssetFeature, bounds: Bounds) {
   const [longitude, latitude] = feature.geometry.coordinates
-  return longitude >= bounds.west && longitude <= bounds.east && latitude >= bounds.south && latitude <= bounds.north
+  return (
+    longitude >= bounds.west &&
+    longitude <= bounds.east &&
+    latitude >= bounds.south &&
+    latitude <= bounds.north
+  )
 }
 
 function routeMatchScore(route: AtlasTransportRouteOption, query: string) {

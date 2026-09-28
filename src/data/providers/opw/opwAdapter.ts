@@ -35,15 +35,20 @@ export function adaptOpwLatest(input: OpwLatestGeoJson): AtlasFeatureCollection 
         value: validValue,
         unit: 'm',
         stale: status === 'warning' || status === 'offline',
-        latestTelemetry: validValue === undefined || !observedAt ? [] : [{
-          assetId: id,
-          metric: 'water-level',
-          value: validValue,
-          unit: 'm',
-          observedAt,
-          provider: 'opw-water',
-          quality: 'valid',
-        }],
+        latestTelemetry:
+          validValue === undefined || !observedAt
+            ? []
+            : [
+                {
+                  assetId: id,
+                  metric: 'water-level',
+                  value: validValue,
+                  unit: 'm',
+                  observedAt,
+                  provider: 'opw-water',
+                  quality: 'valid',
+                },
+              ],
         sourceProperties: pickOpwDetails(properties),
       },
     })

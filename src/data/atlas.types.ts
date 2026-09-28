@@ -6,7 +6,8 @@ import type { TelemetryReading } from './telemetry.types.ts'
 export type AtlasStatus = 'normal' | 'warning' | 'critical' | 'offline' | 'unknown'
 export type ProviderHealth = 'healthy' | 'degraded' | 'unavailable'
 export type AtlasProviderId = 'opw-water' | 'dublin-bikes' | 'dcc-sonitus'
-export type AtlasAssetType = 'water-gauge' | 'bike-station' | 'noise-monitor' | 'air-quality-monitor'
+export type AtlasAssetType =
+  'water-gauge' | 'bike-station' | 'noise-monitor' | 'air-quality-monitor'
 
 export interface AtlasFeatureProperties {
   id: string
@@ -75,7 +76,8 @@ export interface AtlasTransitStopSelection {
   featureId: string
 }
 
-export type AtlasSelection = AtlasAssetSelection | AtlasIncidentSelection | AtlasMovingSelection | AtlasTransitStopSelection
+export type AtlasSelection =
+  AtlasAssetSelection | AtlasIncidentSelection | AtlasMovingSelection | AtlasTransitStopSelection
 
 export interface AtlasFilters {
   providers: AtlasProviderId[]

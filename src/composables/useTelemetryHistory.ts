@@ -1,13 +1,20 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import type { AtlasPointFeature } from '../data/atlas.types'
-import { defaultMetricForFeature, fetchTelemetry, metricsForFeature, rangesForFeature } from '../data/telemetryClient'
+import {
+  defaultMetricForFeature,
+  fetchTelemetry,
+  metricsForFeature,
+  rangesForFeature,
+} from '../data/telemetryClient'
 import type { TelemetryMetric, TelemetryQueryState, TelemetryRange } from '../data/telemetry.types'
 
 export function useTelemetryHistory(feature: Ref<AtlasPointFeature | null>) {
   const range = ref<TelemetryRange>('24h')
   const selectedMetric = ref<TelemetryMetric | null>(null)
-  const availableMetrics = computed(() => feature.value ? metricsForFeature(feature.value) : [])
-  const availableRanges = computed(() => feature.value ? rangesForFeature(feature.value) : ['24h'] as TelemetryRange[])
+  const availableMetrics = computed(() => (feature.value ? metricsForFeature(feature.value) : []))
+  const availableRanges = computed(() =>
+    feature.value ? rangesForFeature(feature.value) : (['24h'] as TelemetryRange[]),
+  )
   const state = ref<TelemetryQueryState>({
     assetId: '',
     metric: '',
@@ -18,19 +25,23 @@ export function useTelemetryHistory(feature: Ref<AtlasPointFeature | null>) {
   let requestId = 0
   let controller: AbortController | null = null
 
-  watch(feature, (current) => {
-    controller?.abort()
-    selectedMetric.value = current ? defaultMetricForFeature(current) : null
-    if (current && !rangesForFeature(current).includes(range.value)) range.value = '24h'
-    state.value = {
-      assetId: current?.properties.id ?? '',
-      metric: selectedMetric.value?.id ?? '',
-      range: range.value,
-      status: current && selectedMetric.value ? 'loading' : 'idle',
-      readings: [],
-    }
-    if (current && selectedMetric.value) load()
-  }, { immediate: true })
+  watch(
+    feature,
+    (current) => {
+      controller?.abort()
+      selectedMetric.value = current ? defaultMetricForFeature(current) : null
+      if (current && !rangesForFeature(current).includes(range.value)) range.value = '24h'
+      state.value = {
+        assetId: current?.properties.id ?? '',
+        metric: selectedMetric.value?.id ?? '',
+        range: range.value,
+        status: current && selectedMetric.value ? 'loading' : 'idle',
+        readings: [],
+      }
+      if (current && selectedMetric.value) load()
+    },
+    { immediate: true },
+  )
 
   watch([selectedMetric, range], () => {
     if (feature.value && selectedMetric.value) load()

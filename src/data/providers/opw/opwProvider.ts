@@ -12,6 +12,6 @@ export const opwProvider: AtlasProvider = {
   async fetchAssets() {
     const response = await fetch(`${OPW_LATEST_URL}?${Date.now()}`)
     if (!response.ok) throw new Error(`OPW responded ${response.status}`)
-    return adaptOpwLatest(await response.json() as OpwLatestGeoJson)
+    return adaptOpwLatest((await response.json()) as OpwLatestGeoJson)
   },
 }

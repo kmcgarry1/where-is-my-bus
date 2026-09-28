@@ -12,13 +12,18 @@ export function epaBathingRoutes(): Connect.NextHandleFunction {
     }
 
     try {
-      const [alerts, locations] = await Promise.all([fetchEpaBathingAlerts(), fetchEpaBathingLocations()])
+      const [alerts, locations] = await Promise.all([
+        fetchEpaBathingAlerts(),
+        fetchEpaBathingLocations(),
+      ])
       sendJson(response, 200, {
         collection: adaptEpaBathingAlerts(alerts, locations),
         syncedAt: new Date().toISOString(),
       })
     } catch (error) {
-      sendJson(response, 502, { error: error instanceof Error ? error.message : 'EPA Bathing Water request failed' })
+      sendJson(response, 502, {
+        error: error instanceof Error ? error.message : 'EPA Bathing Water request failed',
+      })
     }
   }
 }

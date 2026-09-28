@@ -1,9 +1,11 @@
-import type { AtlasMovingAssetCollection, AtlasMovingAssetProvider, MovingProviderState } from '../movingAsset.types'
+import type {
+  AtlasMovingAssetCollection,
+  AtlasMovingAssetProvider,
+  MovingProviderState,
+} from '../movingAsset.types'
 import { ntaMovingProvider } from './ntaGtfsRealtime/ntaMovingProvider'
 
-export const movingProviders: AtlasMovingAssetProvider[] = [
-  ntaMovingProvider,
-]
+export const movingProviders: AtlasMovingAssetProvider[] = [ntaMovingProvider]
 
 export function emptyMovingCollection(): AtlasMovingAssetCollection {
   return { type: 'FeatureCollection', features: [] }

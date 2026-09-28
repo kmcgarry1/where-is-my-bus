@@ -1,8 +1,13 @@
-const appUrl = process.env.ATLASOPS_SMOKE_URL ?? process.env.ATLASOPS_VERIFY_URL ?? 'http://127.0.0.1:5173/'
+const appUrl =
+  process.env.BUSTIME_VERIFY_URL ??
+  process.env.ATLASOPS_VERIFY_URL ??
+  process.env.ATLASOPS_SMOKE_URL ??
+  'http://127.0.0.1:5174/'
 const baseUrl = new URL(appUrl)
 const requireLive = process.env.ATLASOPS_REQUIRE_LIVE_NTA === '1'
 const requireStaticGtfs = process.env.ATLASOPS_REQUIRE_STATIC_GTFS === '1'
-const { deriveMissingMovingBearings, interpolateMovingCollection } = await import('../src/data/moving/interpolation.ts')
+const { deriveMissingMovingBearings, interpolateMovingCollection } =
+  await import('../src/data/moving/interpolation.ts')
 
 const diagnostics = await readJson('/api/providers/nta/diagnostics', 'NTA diagnostics')
 const vehicles = await readJson('/api/providers/nta/vehicles', 'NTA vehicles')
@@ -16,6 +21,10 @@ const result = {
   vehicleCount: vehicles.collection?.features?.length ?? 0,
   alertSource: alerts.source,
   alertCount: alerts.collection?.features?.length ?? 0,
+  alertCoverage:
+    'not-assessed: unscoped application endpoint filters alerts; use verify:baseline -- --live for upstream health',
+  tripUpdateHealth:
+    'not-assessed: application API has no raw TripUpdate endpoint; use verify:baseline -- --live',
   staticGtfsSource: diagnostics.diagnostics?.staticGtfs?.source,
   staticGtfsConfigured: diagnostics.diagnostics?.staticGtfs?.configured,
   staticRouteCount: diagnostics.diagnostics?.staticGtfs?.routeCount ?? 0,
@@ -30,15 +39,27 @@ const result = {
 const failures = []
 if (!diagnostics.diagnostics?.realtime) failures.push('diagnostics missing realtime section')
 if (!diagnostics.diagnostics?.staticGtfs) failures.push('diagnostics missing static GTFS section')
-if (!diagnostics.diagnostics?.recommendedStaticGtfs?.url) failures.push('diagnostics missing recommended static GTFS URL')
-if (!Array.isArray(vehicles.collection?.features)) failures.push('vehicles response missing GeoJSON features')
-if (!Array.isArray(alerts.collection?.features)) failures.push('alerts response missing GeoJSON features')
-if (requireLive && diagnostics.diagnostics?.realtime?.mode !== 'live') failures.push('ATLASOPS_REQUIRE_LIVE_NTA=1 but diagnostics mode is not live')
-if (requireLive && vehicles.source !== 'live') failures.push('ATLASOPS_REQUIRE_LIVE_NTA=1 but vehicles source is not live')
-if (requireLive && alerts.source !== 'live') failures.push('ATLASOPS_REQUIRE_LIVE_NTA=1 but alerts source is not live')
-if (requireLive && result.vehicleCount === 0) failures.push('ATLASOPS_REQUIRE_LIVE_NTA=1 but no live vehicles were returned')
-if (requireStaticGtfs && diagnostics.diagnostics?.staticGtfs?.source !== 'configured') failures.push('ATLASOPS_REQUIRE_STATIC_GTFS=1 but static GTFS is not configured')
-if (requireStaticGtfs && result.staticStopCount === 0) failures.push('ATLASOPS_REQUIRE_STATIC_GTFS=1 but no static stops were indexed')
+if (!diagnostics.diagnostics?.recommendedStaticGtfs?.url)
+  failures.push('diagnostics missing recommended static GTFS URL')
+if (!Array.isArray(vehicles.collection?.features))
+  failures.push('vehicles response missing GeoJSON features')
+if (!Array.isArray(alerts.collection?.features))
+  failures.push('alerts response missing GeoJSON features')
+if (requireLive && diagnostics.diagnostics?.realtime?.mode !== 'live')
+  failures.push('ATLASOPS_REQUIRE_LIVE_NTA=1 but diagnostics mode is not live')
+if (requireLive && vehicles.source !== 'live')
+  failures.push('ATLASOPS_REQUIRE_LIVE_NTA=1 but vehicles source is not live')
+if (requireLive && alerts.source !== 'live')
+  failures.push('ATLASOPS_REQUIRE_LIVE_NTA=1 but alerts source is not live')
+if (requireLive && result.vehicleCount === 0)
+  failures.push('ATLASOPS_REQUIRE_LIVE_NTA=1 but no live vehicles were returned')
+if (
+  requireStaticGtfs &&
+  !['configured', 'recommended'].includes(diagnostics.diagnostics?.staticGtfs?.source)
+)
+  failures.push('ATLASOPS_REQUIRE_STATIC_GTFS=1 but static GTFS is unavailable')
+if (requireStaticGtfs && result.staticStopCount === 0)
+  failures.push('ATLASOPS_REQUIRE_STATIC_GTFS=1 but no static stops were indexed')
 if (!result.interpolation.pass) failures.push(result.interpolation.error)
 if (!result.derivedBearing.pass) failures.push(result.derivedBearing.error)
 
@@ -49,14 +70,14 @@ if (failures.length) {
 }
 
 async function readJson(path, label) {
-  const response = await fetch(new URL(path, baseUrl))
+  const response = await fetch(new URL(path, baseUrl), { signal: AbortSignal.timeout(120000) })
   const contentType = response.headers.get('content-type') ?? ''
   const body = await response.text()
   if (!response.ok) {
-    throw new Error(`${label} responded ${response.status}: ${body.slice(0, 240)}`)
+    throw new Error(`${label} responded ${response.status}`)
   }
   if (!contentType.includes('application/json')) {
-    throw new Error(`${label} returned ${contentType || 'unknown content type'}: ${body.slice(0, 120)}`)
+    throw new Error(`${label} did not return JSON`)
   }
   return JSON.parse(body)
 }
@@ -66,10 +87,11 @@ function verifyInterpolation() {
   const to = movingCollectionAt([-6.2, 53.4], 'measured')
   const midpoint = interpolateMovingCollection(from, to, 0.5).features[0]
   const coordinates = midpoint.geometry.coordinates
-  const pass = midpoint.properties.interpolated === true
-    && midpoint.properties.sourceProperties.movementInterpolation === 'visual-transition'
-    && Math.abs(coordinates[0] - -6.25) < 0.000001
-    && Math.abs(coordinates[1] - 53.35) < 0.000001
+  const pass =
+    midpoint.properties.interpolated === true &&
+    midpoint.properties.sourceProperties.movementInterpolation === 'visual-transition' &&
+    Math.abs(coordinates[0] - -6.25) < 0.000001 &&
+    Math.abs(coordinates[1] - 53.35) < 0.000001
   return {
     pass,
     coordinates,
@@ -83,9 +105,10 @@ function verifyDerivedBearing() {
   const to = movingCollectionAt([-6.2, 53.3], 'measured')
   const feature = deriveMissingMovingBearings(from, to).features[0]
   const bearing = feature.properties.bearing
-  const pass = Number.isFinite(bearing)
-    && Math.abs(bearing - 90) < 0.1
-    && feature.properties.sourceProperties.bearingSource === 'derived-from-previous-position'
+  const pass =
+    Number.isFinite(bearing) &&
+    Math.abs(bearing - 90) < 0.1 &&
+    feature.properties.sourceProperties.bearingSource === 'derived-from-previous-position'
   return {
     pass,
     bearing,
@@ -97,23 +120,25 @@ function verifyDerivedBearing() {
 function movingCollectionAt(coordinates, movementInterpolation) {
   return {
     type: 'FeatureCollection',
-    features: [{
-      type: 'Feature',
-      id: 'vehicle:test',
-      geometry: { type: 'Point', coordinates },
-      properties: {
+    features: [
+      {
+        type: 'Feature',
         id: 'vehicle:test',
-        provider: 'nta-gtfs-realtime',
-        providerName: 'NTA GTFS-Realtime',
-        assetType: 'bus',
-        name: 'Test vehicle',
-        observedAt: new Date(0).toISOString(),
-        status: 'normal',
-        sourceProperties: {
-          source: 'test',
-          movementInterpolation,
+        geometry: { type: 'Point', coordinates },
+        properties: {
+          id: 'vehicle:test',
+          provider: 'nta-gtfs-realtime',
+          providerName: 'NTA GTFS-Realtime',
+          assetType: 'bus',
+          name: 'Test vehicle',
+          observedAt: new Date(0).toISOString(),
+          status: 'normal',
+          sourceProperties: {
+            source: 'test',
+            movementInterpolation,
+          },
         },
       },
-    }],
+    ],
   }
 }

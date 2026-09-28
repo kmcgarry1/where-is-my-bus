@@ -7,7 +7,9 @@ defineProps<{
 }>()
 
 function formatValue(reading: TelemetryReading) {
-  return reading.value === null ? 'No value' : `${reading.value.toFixed(1)} ${reading.unit ?? ''}`.trim()
+  return reading.value === null
+    ? 'No value'
+    : `${reading.value.toFixed(1)} ${reading.unit ?? ''}`.trim()
 }
 
 function labelForMetric(metric: string) {

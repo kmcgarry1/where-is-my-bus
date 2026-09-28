@@ -1,6 +1,9 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { AtlasEtaPrediction, AtlasMovingAssetCollection } from '../../src/data/movingAsset.types.ts'
+import type {
+  AtlasEtaPrediction,
+  AtlasMovingAssetCollection,
+} from '../../src/data/movingAsset.types.ts'
 
 export interface VehicleObservationRecord {
   observationId: string
@@ -138,28 +141,30 @@ export async function recordVehicleSnapshot(
     if (recentObservationKeys.get(vehicleId) === duplicateKey) return []
     recentObservationKeys.set(vehicleId, duplicateKey)
 
-    return [{
-      observationId: `${feature.properties.provider}:${vehicleId}:${feature.properties.observedAt}`,
-      provider: feature.properties.provider,
-      source,
-      vehicleId,
-      featureId: feature.properties.id,
-      tripId: feature.properties.tripId,
-      routeId: feature.properties.routeId,
-      routeLabel: feature.properties.routeLabel,
-      longitude,
-      latitude,
-      bearing: feature.properties.bearing,
-      speed: feature.properties.speed,
-      observedAt: feature.properties.observedAt,
-      recordedAt,
-      scheduleStatus: feature.properties.scheduleStatus,
-      scheduleDeviationSeconds: feature.properties.scheduleDeviationSeconds,
-      nextStopId: stringValue(feature.properties.sourceProperties.nextStopId),
-      currentStopSequence: numberValue(feature.properties.sourceProperties.currentStopSequence),
-      scheduleRelationship: stringValue(feature.properties.sourceProperties.scheduleRelationship),
-      providerArrival: stringValue(feature.properties.sourceProperties.providerArrival),
-    }]
+    return [
+      {
+        observationId: `${feature.properties.provider}:${vehicleId}:${feature.properties.observedAt}`,
+        provider: feature.properties.provider,
+        source,
+        vehicleId,
+        featureId: feature.properties.id,
+        tripId: feature.properties.tripId,
+        routeId: feature.properties.routeId,
+        routeLabel: feature.properties.routeLabel,
+        longitude,
+        latitude,
+        bearing: feature.properties.bearing,
+        speed: feature.properties.speed,
+        observedAt: feature.properties.observedAt,
+        recordedAt,
+        scheduleStatus: feature.properties.scheduleStatus,
+        scheduleDeviationSeconds: feature.properties.scheduleDeviationSeconds,
+        nextStopId: stringValue(feature.properties.sourceProperties.nextStopId),
+        currentStopSequence: numberValue(feature.properties.sourceProperties.currentStopSequence),
+        scheduleRelationship: stringValue(feature.properties.sourceProperties.scheduleRelationship),
+        providerArrival: stringValue(feature.properties.sourceProperties.providerArrival),
+      },
+    ]
   })
 
   await appendJsonl(observationPath(), records)
@@ -174,7 +179,10 @@ export async function recordVehicleSnapshot(
   }
 }
 
-export async function recordEtaPrediction(prediction: AtlasEtaPrediction, predictorVersion = 'baseline-v1') {
+export async function recordEtaPrediction(
+  prediction: AtlasEtaPrediction,
+  predictorVersion = 'baseline-v1',
+) {
   const record: EtaPredictionRecord = {
     predictionId: crypto.randomUUID(),
     predictorVersion,
@@ -199,47 +207,87 @@ export async function recordEtaPrediction(prediction: AtlasEtaPrediction, predic
 }
 
 export async function vehicleObservations(query: VehicleObservationQuery = {}) {
-  return filterByTimeAndLimit(await readJsonl<VehicleObservationRecord>(observationPath()), query, (record) => {
-    return (!query.vehicleId || record.vehicleId === query.vehicleId || record.featureId === query.vehicleId)
-      && (!query.routeId || record.routeId === query.routeId || record.routeLabel === query.routeId)
-      && (!query.tripId || record.tripId === query.tripId)
-  }, (record) => record.observedAt)
+  return filterByTimeAndLimit(
+    await readJsonl<VehicleObservationRecord>(observationPath()),
+    query,
+    (record) => {
+      return (
+        (!query.vehicleId ||
+          record.vehicleId === query.vehicleId ||
+          record.featureId === query.vehicleId) &&
+        (!query.routeId ||
+          record.routeId === query.routeId ||
+          record.routeLabel === query.routeId) &&
+        (!query.tripId || record.tripId === query.tripId)
+      )
+    },
+    (record) => record.observedAt,
+  )
 }
 
 export async function etaPredictions(query: PredictionQuery = {}) {
-  return filterByTimeAndLimit(await readJsonl<EtaPredictionRecord>(predictionPath()), query, (record) => {
-    return (!query.vehicleId || record.vehicleId === query.vehicleId)
-      && (!query.routeId || record.routeId === query.routeId)
-      && (!query.tripId || record.tripId === query.tripId)
-      && (!query.targetStopId || record.targetStopId === query.targetStopId)
-  }, (record) => record.createdAt)
+  return filterByTimeAndLimit(
+    await readJsonl<EtaPredictionRecord>(predictionPath()),
+    query,
+    (record) => {
+      return (
+        (!query.vehicleId || record.vehicleId === query.vehicleId) &&
+        (!query.routeId || record.routeId === query.routeId) &&
+        (!query.tripId || record.tripId === query.tripId) &&
+        (!query.targetStopId || record.targetStopId === query.targetStopId)
+      )
+    },
+    (record) => record.createdAt,
+  )
 }
 
 export async function observedStopArrivals(query: StopArrivalQuery = {}) {
-  return filterByTimeAndLimit(await readJsonl<ObservedStopArrivalRecord>(stopArrivalPath()), query, (record) => {
-    return (!query.vehicleId || record.vehicleId === query.vehicleId || record.featureId === query.vehicleId)
-      && (!query.routeId || record.routeId === query.routeId || record.routeLabel === query.routeId)
-      && (!query.tripId || record.tripId === query.tripId)
-      && (!query.stopId || record.stopId === query.stopId)
-  }, (record) => record.observedArrival)
+  return filterByTimeAndLimit(
+    await readJsonl<ObservedStopArrivalRecord>(stopArrivalPath()),
+    query,
+    (record) => {
+      return (
+        (!query.vehicleId ||
+          record.vehicleId === query.vehicleId ||
+          record.featureId === query.vehicleId) &&
+        (!query.routeId ||
+          record.routeId === query.routeId ||
+          record.routeLabel === query.routeId) &&
+        (!query.tripId || record.tripId === query.tripId) &&
+        (!query.stopId || record.stopId === query.stopId)
+      )
+    },
+    (record) => record.observedArrival,
+  )
 }
 
 export async function journeySegments(query: JourneySegmentQuery = {}) {
-  return filterByTimeAndLimit(await readJsonl<JourneySegmentRecord>(journeySegmentPath()), query, (record) => {
-    return (!query.vehicleId || record.vehicleId === query.vehicleId)
-      && (!query.routeId || record.routeId === query.routeId || record.routeLabel === query.routeId)
-      && (!query.tripId || record.tripId === query.tripId)
-      && (!query.fromStopId || record.fromStopId === query.fromStopId)
-      && (!query.toStopId || record.toStopId === query.toStopId)
-  }, (record) => record.arrivedAt)
+  return filterByTimeAndLimit(
+    await readJsonl<JourneySegmentRecord>(journeySegmentPath()),
+    query,
+    (record) => {
+      return (
+        (!query.vehicleId || record.vehicleId === query.vehicleId) &&
+        (!query.routeId ||
+          record.routeId === query.routeId ||
+          record.routeLabel === query.routeId) &&
+        (!query.tripId || record.tripId === query.tripId) &&
+        (!query.fromStopId || record.fromStopId === query.fromStopId) &&
+        (!query.toStopId || record.toStopId === query.toStopId)
+      )
+    },
+    (record) => record.arrivedAt,
+  )
 }
 
 export async function vehicleObservationSummary(query: VehicleObservationQuery = {}) {
   const records = await vehicleObservations({ ...query, limit: maxLimit })
   const vehicles = new Set(records.map((record) => record.vehicleId))
-  const routes = new Set(records.flatMap((record) => record.routeId ? [record.routeId] : []))
-  const trips = new Set(records.flatMap((record) => record.tripId ? [record.tripId] : []))
-  const delays = records.flatMap((record) => typeof record.scheduleDeviationSeconds === 'number' ? [record.scheduleDeviationSeconds] : [])
+  const routes = new Set(records.flatMap((record) => (record.routeId ? [record.routeId] : [])))
+  const trips = new Set(records.flatMap((record) => (record.tripId ? [record.tripId] : [])))
+  const delays = records.flatMap((record) =>
+    typeof record.scheduleDeviationSeconds === 'number' ? [record.scheduleDeviationSeconds] : [],
+  )
   return {
     observationCount: records.length,
     vehicleCount: vehicles.size,
@@ -256,10 +304,12 @@ export async function vehicleObservationSummary(query: VehicleObservationQuery =
 export async function stopArrivalSummary(query: StopArrivalQuery = {}) {
   const records = await observedStopArrivals({ ...query, limit: maxLimit })
   const vehicles = new Set(records.map((record) => record.vehicleId))
-  const routes = new Set(records.flatMap((record) => record.routeId ? [record.routeId] : []))
+  const routes = new Set(records.flatMap((record) => (record.routeId ? [record.routeId] : [])))
   const trips = new Set(records.map((record) => record.tripId))
   const stops = new Set(records.map((record) => record.stopId))
-  const deviations = records.flatMap((record) => typeof record.scheduleDeviationSeconds === 'number' ? [record.scheduleDeviationSeconds] : [])
+  const deviations = records.flatMap((record) =>
+    typeof record.scheduleDeviationSeconds === 'number' ? [record.scheduleDeviationSeconds] : [],
+  )
   return {
     arrivalCount: records.length,
     vehicleCount: vehicles.size,
@@ -290,15 +340,19 @@ export async function journeySegmentSummary(query: JourneySegmentQuery = {}) {
 function deriveStopArrivals(records: VehicleObservationRecord[], recordedAt: string) {
   const arrivals: ObservedStopArrivalRecord[] = []
   const segments: JourneySegmentRecord[] = []
-  for (const current of [...records].sort((left, right) => Date.parse(left.observedAt) - Date.parse(right.observedAt))) {
+  for (const current of [...records].sort(
+    (left, right) => Date.parse(left.observedAt) - Date.parse(right.observedAt),
+  )) {
     const previous = previousObservationByVehicleId.get(current.vehicleId)
     previousObservationByVehicleId.set(current.vehicleId, current)
-    if (!previous || !previous.tripId || !current.tripId || previous.tripId !== current.tripId) continue
+    if (!previous || !previous.tripId || !current.tripId || previous.tripId !== current.tripId)
+      continue
     if (!previous.nextStopId || previous.nextStopId === current.nextStopId) continue
 
-    const sequenceAdvanced = previous.currentStopSequence === undefined
-      || current.currentStopSequence === undefined
-      || current.currentStopSequence >= previous.currentStopSequence
+    const sequenceAdvanced =
+      previous.currentStopSequence === undefined ||
+      current.currentStopSequence === undefined ||
+      current.currentStopSequence >= previous.currentStopSequence
     if (!sequenceAdvanced) continue
 
     const observedArrival = current.observedAt
@@ -312,19 +366,27 @@ function deriveStopArrivals(records: VehicleObservationRecord[], recordedAt: str
       routeLabel: current.routeLabel ?? previous.routeLabel,
       stopId: previous.nextStopId,
       stopSequence: previous.currentStopSequence,
-      scheduledArrival: scheduledArrivalFromDeviation(observedArrival, previous.scheduleDeviationSeconds),
+      scheduledArrival: scheduledArrivalFromDeviation(
+        observedArrival,
+        previous.scheduleDeviationSeconds,
+      ),
       providerPredictedArrival: previous.providerArrival,
       observedArrival,
       recordedAt,
       scheduleDeviationSeconds: previous.scheduleDeviationSeconds,
-      confidence: previous.currentStopSequence !== undefined && current.currentStopSequence !== undefined ? 'medium' : 'low',
+      confidence:
+        previous.currentStopSequence !== undefined && current.currentStopSequence !== undefined
+          ? 'medium'
+          : 'low',
     }
     arrivals.push(arrival)
 
     const previousArrivalKey = `${arrival.vehicleId}:${arrival.tripId}`
     const previousArrival = previousArrivalByTripVehicle.get(previousArrivalKey)
     previousArrivalByTripVehicle.set(previousArrivalKey, arrival)
-    const segment = previousArrival ? journeySegmentFromArrivals(previousArrival, arrival, recordedAt) : undefined
+    const segment = previousArrival
+      ? journeySegmentFromArrivals(previousArrival, arrival, recordedAt)
+      : undefined
     if (segment) segments.push(segment)
   }
   return { arrivals, segments }
@@ -336,9 +398,17 @@ function journeySegmentFromArrivals(
   recordedAt: string,
 ): JourneySegmentRecord | undefined {
   if (from.stopId === to.stopId) return undefined
-  if (from.stopSequence !== undefined && to.stopSequence !== undefined && to.stopSequence <= from.stopSequence) return undefined
-  const durationSeconds = Math.round((Date.parse(to.observedArrival) - Date.parse(from.observedArrival)) / 1000)
-  if (!Number.isFinite(durationSeconds) || durationSeconds <= 0 || durationSeconds > 3 * 3600) return undefined
+  if (
+    from.stopSequence !== undefined &&
+    to.stopSequence !== undefined &&
+    to.stopSequence <= from.stopSequence
+  )
+    return undefined
+  const durationSeconds = Math.round(
+    (Date.parse(to.observedArrival) - Date.parse(from.observedArrival)) / 1000,
+  )
+  if (!Number.isFinite(durationSeconds) || durationSeconds <= 0 || durationSeconds > 3 * 3600)
+    return undefined
   return {
     segmentId: `${to.vehicleId}:${to.tripId}:${from.stopId}:${to.stopId}:${to.observedArrival}`,
     vehicleId: to.vehicleId,
@@ -379,7 +449,9 @@ function appendJsonl<T>(path: string, records: T[]) {
   if (!records.length) return Promise.resolve()
   writeQueue = writeQueue.then(async () => {
     await mkdir(dataDirectory(), { recursive: true })
-    await writeFile(path, `${records.map((record) => JSON.stringify(record)).join('\n')}\n`, { flag: 'a' })
+    await writeFile(path, `${records.map((record) => JSON.stringify(record)).join('\n')}\n`, {
+      flag: 'a',
+    })
   })
   return writeQueue
 }
@@ -421,7 +493,10 @@ function journeySegmentPath() {
   return join(dataDirectory(), journeySegmentFileName)
 }
 
-function scheduledArrivalFromDeviation(observedArrival: string, deviationSeconds: number | undefined) {
+function scheduledArrivalFromDeviation(
+  observedArrival: string,
+  deviationSeconds: number | undefined,
+) {
   if (deviationSeconds === undefined) return undefined
   return new Date(Date.parse(observedArrival) - deviationSeconds * 1000).toISOString()
 }

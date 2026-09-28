@@ -27,7 +27,10 @@ export function transportRoutes(): Connect.NextHandleFunction {
           syncedAt: new Date().toISOString(),
         })
       } catch (error) {
-        sendJson(response, 500, { error: error instanceof Error ? error.message : 'Vehicle observation history request failed' })
+        sendJson(response, 500, {
+          error:
+            error instanceof Error ? error.message : 'Vehicle observation history request failed',
+        })
       }
       return
     }
@@ -39,7 +42,10 @@ export function transportRoutes(): Connect.NextHandleFunction {
           syncedAt: new Date().toISOString(),
         })
       } catch (error) {
-        sendJson(response, 500, { error: error instanceof Error ? error.message : 'Vehicle observation summary request failed' })
+        sendJson(response, 500, {
+          error:
+            error instanceof Error ? error.message : 'Vehicle observation summary request failed',
+        })
       }
       return
     }
@@ -51,7 +57,9 @@ export function transportRoutes(): Connect.NextHandleFunction {
           syncedAt: new Date().toISOString(),
         })
       } catch (error) {
-        sendJson(response, 500, { error: error instanceof Error ? error.message : 'ETA prediction history request failed' })
+        sendJson(response, 500, {
+          error: error instanceof Error ? error.message : 'ETA prediction history request failed',
+        })
       }
       return
     }
@@ -63,7 +71,9 @@ export function transportRoutes(): Connect.NextHandleFunction {
           syncedAt: new Date().toISOString(),
         })
       } catch (error) {
-        sendJson(response, 500, { error: error instanceof Error ? error.message : 'Observed stop arrival request failed' })
+        sendJson(response, 500, {
+          error: error instanceof Error ? error.message : 'Observed stop arrival request failed',
+        })
       }
       return
     }
@@ -75,7 +85,10 @@ export function transportRoutes(): Connect.NextHandleFunction {
           syncedAt: new Date().toISOString(),
         })
       } catch (error) {
-        sendJson(response, 500, { error: error instanceof Error ? error.message : 'Observed stop arrival summary request failed' })
+        sendJson(response, 500, {
+          error:
+            error instanceof Error ? error.message : 'Observed stop arrival summary request failed',
+        })
       }
       return
     }
@@ -87,7 +100,9 @@ export function transportRoutes(): Connect.NextHandleFunction {
           syncedAt: new Date().toISOString(),
         })
       } catch (error) {
-        sendJson(response, 500, { error: error instanceof Error ? error.message : 'Journey segment request failed' })
+        sendJson(response, 500, {
+          error: error instanceof Error ? error.message : 'Journey segment request failed',
+        })
       }
       return
     }
@@ -99,7 +114,9 @@ export function transportRoutes(): Connect.NextHandleFunction {
           syncedAt: new Date().toISOString(),
         })
       } catch (error) {
-        sendJson(response, 500, { error: error instanceof Error ? error.message : 'Journey segment summary request failed' })
+        sendJson(response, 500, {
+          error: error instanceof Error ? error.message : 'Journey segment summary request failed',
+        })
       }
       return
     }
@@ -111,10 +128,15 @@ export function transportRoutes(): Connect.NextHandleFunction {
           sendJson(response, 400, { error: 'prediction is required' })
           return
         }
-        const record = await recordEtaPrediction(body.prediction, stringValue(body.predictorVersion) ?? 'baseline-v1')
+        const record = await recordEtaPrediction(
+          body.prediction,
+          stringValue(body.predictorVersion) ?? 'baseline-v1',
+        )
         sendJson(response, 201, { record })
       } catch (error) {
-        sendJson(response, 500, { error: error instanceof Error ? error.message : 'ETA prediction record request failed' })
+        sendJson(response, 500, {
+          error: error instanceof Error ? error.message : 'ETA prediction record request failed',
+        })
       }
       return
     }
@@ -193,11 +215,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isEtaPrediction(value: unknown): value is AtlasEtaPrediction {
-  return isRecord(value)
-    && typeof value.status === 'string'
-    && typeof value.vehicleId === 'string'
-    && typeof value.confidence === 'string'
-    && typeof value.calculatedAt === 'string'
-    && typeof value.method === 'string'
-    && isRecord(value.evidence)
+  return (
+    isRecord(value) &&
+    typeof value.status === 'string' &&
+    typeof value.vehicleId === 'string' &&
+    typeof value.confidence === 'string' &&
+    typeof value.calculatedAt === 'string' &&
+    typeof value.method === 'string' &&
+    isRecord(value.evidence)
+  )
 }

@@ -15,13 +15,10 @@ import { transportRegions } from '../data/moving/transportFilters'
 import { predictArrivalAtStop } from '../data/moving/etaPredictor'
 import { assessDelay } from '../data/moving/delayAssessment'
 
-export interface RouteResult {
-  routeId: string
-  shortName?: string
-  longName?: string
-  operator?: string
-  headsigns: string[]
-}
+import { requestTransit, type RouteResult } from '../data/providers/ntaGtfsRealtime/transitClient'
+
+export type { RouteResult } from '../data/providers/ntaGtfsRealtime/transitClient'
+
 const emptyVehicles = (): AtlasMovingAssetCollection => ({
   type: 'FeatureCollection',
   features: [],
@@ -30,26 +27,6 @@ const emptyStops = (): AtlasTransitStopCollection => ({
   type: 'FeatureCollection',
   features: [],
 })
-
-async function request<T>(
-  path: string,
-  params = new URLSearchParams(),
-  signal?: AbortSignal,
-): Promise<T> {
-  const timeout = AbortSignal.timeout(path === 'vehicles' && !params.has('stopId') || path === 'alerts' ? 20000 : 120000)
-  let response: Response
-  try {
-    response = await fetch(`/api/providers/nta/${path}?${params}`, {
-      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
-    })
-  } catch (cause) {
-    if (signal?.aborted) throw cause
-    throw new Error('Bus information is taking longer than expected. Please try again.')
-  }
-  if (!response.ok)
-    throw new Error('Bus data could not be loaded. Please try again.')
-  return response.json()
-}
 
 export function useTransit() {
   const selectedArea = ref('ireland')
@@ -78,15 +55,14 @@ export function useTransit() {
   const contexts = new Map<string, Promise<AtlasTripContext>>()
   const history = new Map<string, AtlasVehiclePositionObservation[]>()
   const loadedHistory = new Set<string>()
+  // Versions reject responses started before a selection or area change.
   let scopeVersion = 0
   let detailVersion = 0
   let searchController: AbortController | undefined
   let liveController: AbortController | undefined
   let stopsController: AbortController | undefined
   let searchTimer: ReturnType<typeof setTimeout> | undefined
-  const area = computed(() =>
-    transportRegions.find((item) => item.id === selectedArea.value),
-  )
+  const area = computed(() => transportRegions.find((item) => item.id === selectedArea.value))
   const delayAssessment = computed(() =>
     selectedVehicle.value
       ? assessDelay(
@@ -110,10 +86,7 @@ export function useTransit() {
                 properties: {},
                 geometry: {
                   type: 'LineString' as const,
-                  coordinates: points.map((point) => [
-                    point.longitude,
-                    point.latitude,
-                  ]),
+                  coordinates: points.map((point) => [point.longitude, point.latitude]),
                 },
               },
             ]
@@ -124,10 +97,7 @@ export function useTransit() {
     const params = new URLSearchParams()
     const bounds = area.value
     if (bounds)
-      params.set(
-        'bounds',
-        [bounds.west, bounds.south, bounds.east, bounds.north].join(','),
-      )
+      params.set('bounds', [bounds.west, bounds.south, bounds.east, bounds.north].join(','))
     return params
   }
   async function loadMapStops(bounds?: string) {
@@ -152,7 +122,7 @@ export function useTransit() {
       }
     }
     try {
-      const data = await request<{ collection: AtlasTransitStopCollection }>(
+      const data = await requestTransit<{ collection: AtlasTransitStopCollection }>(
         'stops',
         new URLSearchParams({ bounds: values.join(','), limit: '200' }),
         controller.signal,
@@ -167,7 +137,7 @@ export function useTransit() {
     const tripId = vehicle.properties.tripId
     if (!tripId) return Promise.resolve(undefined)
     if (!contexts.has(tripId)) {
-      const promise = request<{ context: AtlasTripContext }>(
+      const promise = requestTransit<{ context: AtlasTripContext }>(
         'trip-context',
         new URLSearchParams({ tripId }),
       )
@@ -181,10 +151,7 @@ export function useTransit() {
     }
     return contexts.get(tripId)!
   }
-  function predict(
-    vehicle: AtlasMovingAssetFeature,
-    context?: AtlasTripContext,
-  ) {
+  function predict(vehicle: AtlasMovingAssetFeature, context?: AtlasTripContext) {
     return predictArrivalAtStop({
       vehicle,
       tripContext: context,
@@ -193,6 +160,7 @@ export function useTransit() {
       now: new Date().toISOString(),
     })
   }
+  // Publish arrivals progressively; one unavailable trip must not hide the others.
   async function refreshDetails() {
     const version = ++detailVersion
     const vehicle = selectedVehicle.value
@@ -202,10 +170,8 @@ export function useTransit() {
     detailError.value = ''
     try {
       const params = new URLSearchParams()
-      if (vehicle?.properties.routeId)
-        params.append('routeId', vehicle.properties.routeId)
-      if (vehicle?.properties.tripId)
-        params.set('tripId', vehicle.properties.tripId)
+      if (vehicle?.properties.routeId) params.append('routeId', vehicle.properties.routeId)
+      if (vehicle?.properties.tripId) params.set('tripId', vehicle.properties.tripId)
       if (stop) params.set('stopId', stop.properties.stopId)
       if (vehicle) {
         const id = vehicle.properties.id
@@ -216,10 +182,9 @@ export function useTransit() {
               since: new Date(Date.now() - 300000).toISOString(),
               limit: '30',
             })
-            const response = await fetch(
-              `/api/transport/vehicle-observations?${historyParams}`,
-              { signal: AbortSignal.timeout(5000) },
-            )
+            const response = await fetch(`/api/transport/vehicle-observations?${historyParams}`, {
+              signal: AbortSignal.timeout(5000),
+            })
             if (response.ok) {
               const data = (await response.json()) as {
                 observations: AtlasVehiclePositionObservation[]
@@ -227,15 +192,8 @@ export function useTransit() {
               const points = [...data.observations, ...(history.get(id) ?? [])]
               history.set(
                 id,
-                [
-                  ...new Map(
-                    points.map((point) => [point.observedAt, point]),
-                  ).values(),
-                ]
-                  .sort(
-                    (a, b) =>
-                      Date.parse(a.observedAt) - Date.parse(b.observedAt),
-                  )
+                [...new Map(points.map((point) => [point.observedAt, point])).values()]
+                  .sort((a, b) => Date.parse(a.observedAt) - Date.parse(b.observedAt))
                   .slice(-30),
               )
               loadedHistory.add(id)
@@ -249,29 +207,30 @@ export function useTransit() {
         eta.value = predict(vehicle, context)
       }
       if (stop) {
-        const data = await request<{ services: AtlasStopService[] }>(
+        const data = await requestTransit<{ services: AtlasStopService[] }>(
           'stop-services',
           new URLSearchParams({ stopId: stop.properties.stopId }),
         )
         if (version !== detailVersion) return
-        data.services.forEach((service) =>
-          params.append('routeId', service.routeId),
-        )
+        data.services.forEach((service) => params.append('routeId', service.routeId))
         const tripServices = new Map(
           data.services.flatMap((service) =>
             service.tripIds.map((tripId) => [tripId, service] as const),
           ),
         )
-        const candidates = visibleVehicles.value.features.filter((bus) =>
-          tripServices.has(bus.properties.tripId ?? ''),
-        ).sort((a, b) => {
-          const distance = (bus: AtlasMovingAssetFeature) => {
-            const longitudeScale = Math.cos(stop.geometry.coordinates[1]! * Math.PI / 180)
-            return ((bus.geometry.coordinates[0]! - stop.geometry.coordinates[0]!) * longitudeScale) ** 2
-              + (bus.geometry.coordinates[1]! - stop.geometry.coordinates[1]!) ** 2
-          }
-          return distance(a) - distance(b)
-        })
+        const candidates = visibleVehicles.value.features
+          .filter((bus) => tripServices.has(bus.properties.tripId ?? ''))
+          .sort((a, b) => {
+            const distance = (bus: AtlasMovingAssetFeature) => {
+              const longitudeScale = Math.cos((stop.geometry.coordinates[1]! * Math.PI) / 180)
+              return (
+                ((bus.geometry.coordinates[0]! - stop.geometry.coordinates[0]!) * longitudeScale) **
+                  2 +
+                (bus.geometry.coordinates[1]! - stop.geometry.coordinates[1]!) ** 2
+              )
+            }
+            return distance(a) - distance(b)
+          })
         const next: AtlasStopArrival[] = []
         for (const bus of candidates) {
           let context: AtlasTripContext | undefined
@@ -284,8 +243,7 @@ export function useTransit() {
           }
           if (version !== detailVersion) return
           const prediction = predict(bus, context)
-          if (prediction.status !== 'available' || !prediction.predictedArrival)
-            continue
+          if (prediction.status !== 'available' || !prediction.predictedArrival) continue
           const service = tripServices.get(bus.properties.tripId!)!
           next.push({
             stopId: stop.properties.stopId,
@@ -309,28 +267,29 @@ export function useTransit() {
             .slice(0, 24)
         }
         arrivals.value = next
-          .sort(
-            (a, b) =>
-              Date.parse(a.displayArrival!) - Date.parse(b.displayArrival!),
-          )
+          .sort((a, b) => Date.parse(a.displayArrival!) - Date.parse(b.displayArrival!))
           .slice(0, 24)
       }
-      const alertData = await request<{
+      const alertData = await requestTransit<{
         collection: { features: AtlasIncidentFeature[] }
       }>('alerts', params)
-      if (version === detailVersion)
-        alerts.value = alertData.collection.features
+      if (version === detailVersion) alerts.value = alertData.collection.features
     } catch (cause) {
       if (version === detailVersion)
-        detailError.value =
-          cause instanceof Error ? cause.message : 'Arrival data unavailable.'
+        detailError.value = cause instanceof Error ? cause.message : 'Arrival data unavailable.'
     } finally {
       if (version === detailVersion) detailLoading.value = false
     }
   }
   async function refresh() {
     if (!selectedArea.value) return
-    if (searchMode.value !== 'live' && !selectedRoute.value && !selectedStop.value && !selectedVehicle.value) return
+    if (
+      searchMode.value !== 'live' &&
+      !selectedRoute.value &&
+      !selectedStop.value &&
+      !selectedVehicle.value
+    )
+      return
     const version = scopeVersion
     liveController?.abort()
     liveController = new AbortController()
@@ -340,18 +299,15 @@ export function useTransit() {
       const params = selectedStop.value
         ? new URLSearchParams({ stopId: selectedStop.value.properties.stopId })
         : areaParams()
-      if (selectedRoute.value)
-        params.set('routeId', selectedRoute.value.routeId)
-      const data = await request<{
+      if (selectedRoute.value) params.set('routeId', selectedRoute.value.routeId)
+      const data = await requestTransit<{
         collection: AtlasMovingAssetCollection
         source: string
       }>('vehicles', params, liveController.signal)
       if (version !== scopeVersion) return
       visibleVehicles.value = data.collection
       source.value = data.source
-      const ids = new Set(
-        data.collection.features.map((bus) => bus.properties.id),
-      )
+      const ids = new Set(data.collection.features.map((bus) => bus.properties.id))
       for (const id of history.keys()) if (!ids.has(id)) history.delete(id)
       for (const bus of data.collection.features) {
         const points = history.get(bus.properties.id) ?? []
@@ -384,8 +340,7 @@ export function useTransit() {
         version === scopeVersion &&
         !(cause instanceof DOMException && cause.name === 'AbortError')
       )
-        error.value =
-          cause instanceof Error ? cause.message : 'Bus data unavailable.'
+        error.value = cause instanceof Error ? cause.message : 'Bus data unavailable.'
     } finally {
       if (version === scopeVersion) loading.value = false
     }
@@ -431,17 +386,20 @@ export function useTransit() {
     changeScope()
   }
   watch(query, () => {
-    if (selectedRoute.value || selectedStop.value || selectedVehicle.value)
-      reset()
+    if (selectedRoute.value || selectedStop.value || selectedVehicle.value) reset()
   })
   watch(searchMode, () => changeScope())
-  watch(selectedArea, () => {
-    stopsController?.abort()
-    query.value = ''
-    clearSelection()
-    visibleStops.value = emptyStops()
-    changeScope()
-  }, { immediate: true })
+  watch(
+    selectedArea,
+    () => {
+      stopsController?.abort()
+      query.value = ''
+      clearSelection()
+      visibleStops.value = emptyStops()
+      changeScope()
+    },
+    { immediate: true },
+  )
   watch([query, searchMode, selectedArea], () => {
     nearby.value = false
     clearTimeout(searchTimer)
@@ -465,13 +423,12 @@ export function useTransit() {
         const params = areaParams()
         params.set('q', query.value.trim())
         if (mode === 'stops') {
-          const result = await request<{
+          const result = await requestTransit<{
             collection: AtlasTransitStopCollection
           }>('stops', params, controller.signal)
-          if (!controller.signal.aborted)
-            stopResults.value = result.collection.features
+          if (!controller.signal.aborted) stopResults.value = result.collection.features
         } else {
-          const result = await request<{ routes: RouteResult[] }>(
+          const result = await requestTransit<{ routes: RouteResult[] }>(
             'routes',
             params,
             controller.signal,
@@ -480,8 +437,7 @@ export function useTransit() {
         }
       } catch (cause) {
         if (!controller.signal.aborted)
-          searchError.value =
-            cause instanceof Error ? cause.message : 'Search unavailable.'
+          searchError.value = cause instanceof Error ? cause.message : 'Search unavailable.'
       } finally {
         if (!controller.signal.aborted) searching.value = false
       }
@@ -499,26 +455,40 @@ export function useTransit() {
     searching.value = true
     searchError.value = ''
     // A small geographic window avoids downloading the nationwide stop index.
-    const dy = 1 / 111.195
-    const dx = dy / Math.cos(latitude * Math.PI / 180)
+    const latitudeRadiusDegrees = 1 / 111.195
+    const longitudeRadiusDegrees = latitudeRadiusDegrees / Math.cos((latitude * Math.PI) / 180)
     try {
-      const result = await request<{ collection: AtlasTransitStopCollection }>('stops', new URLSearchParams({
-        bounds: [longitude - dx, latitude - dy, longitude + dx, latitude + dy].join(','),
-        limit: '200',
-      }), controller.signal)
+      const result = await requestTransit<{ collection: AtlasTransitStopCollection }>(
+        'stops',
+        new URLSearchParams({
+          bounds: [
+            longitude - longitudeRadiusDegrees,
+            latitude - latitudeRadiusDegrees,
+            longitude + longitudeRadiusDegrees,
+            latitude + latitudeRadiusDegrees,
+          ].join(','),
+          limit: '200',
+        }),
+        controller.signal,
+      )
       if (controller.signal.aborted) return
       const distances: Record<string, number> = {}
       for (const stop of result.collection.features) {
         const [lng, lat] = stop.geometry.coordinates
-        distances[stop.properties.id] = Math.hypot((lng! - longitude) / dx, (lat! - latitude) / dy) * 1000
+        distances[stop.properties.id] =
+          Math.hypot(
+            (lng! - longitude) / longitudeRadiusDegrees,
+            (lat! - latitude) / latitudeRadiusDegrees,
+          ) * 1000
       }
       nearbyDistances.value = distances
       stopResults.value = result.collection.features
-        .filter(stop => distances[stop.properties.id]! <= 1000)
+        .filter((stop) => distances[stop.properties.id]! <= 1000)
         .sort((a, b) => distances[a.properties.id]! - distances[b.properties.id]!)
       visibleStops.value = { type: 'FeatureCollection', features: stopResults.value }
     } catch (cause) {
-      if (!controller.signal.aborted) searchError.value = cause instanceof Error ? cause.message : 'Nearby stops unavailable.'
+      if (!controller.signal.aborted)
+        searchError.value = cause instanceof Error ? cause.message : 'Nearby stops unavailable.'
     } finally {
       if (!controller.signal.aborted) searching.value = false
     }

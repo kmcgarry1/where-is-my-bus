@@ -11,7 +11,8 @@ const cache = new Map<string, Promise<TelemetryResponse>>()
 const defaultRanges: TelemetryRange[] = ['6h', '24h', '7d', '30d']
 
 export function defaultMetricForFeature(feature: AtlasPointFeature): TelemetryMetric | null {
-  if (feature.properties.assetType === 'water-gauge') return { id: 'water-level', label: 'Water level', unit: 'm', decimals: 3 }
+  if (feature.properties.assetType === 'water-gauge')
+    return { id: 'water-level', label: 'Water level', unit: 'm', decimals: 3 }
   if (feature.properties.assetType === 'noise-monitor') return metricForId('noise-laeq')
   const current = feature.properties.latestTelemetry?.[0]
   if (!current) return null
@@ -19,7 +20,8 @@ export function defaultMetricForFeature(feature: AtlasPointFeature): TelemetryMe
 }
 
 export function metricsForFeature(feature: AtlasPointFeature): TelemetryMetric[] {
-  if (feature.properties.assetType === 'water-gauge') return [{ id: 'water-level', label: 'Water level', unit: 'm', decimals: 3 }]
+  if (feature.properties.assetType === 'water-gauge')
+    return [{ id: 'water-level', label: 'Water level', unit: 'm', decimals: 3 }]
   if (feature.properties.assetType === 'noise-monitor') return [metricForId('noise-laeq')]
   const seen = new Set<string>()
   return (feature.properties.latestTelemetry ?? []).flatMap((reading) => {
@@ -34,16 +36,22 @@ export function rangesForFeature(feature: AtlasPointFeature): TelemetryRange[] {
   return defaultRanges
 }
 
-export async function fetchTelemetry(feature: AtlasPointFeature, metric: string, range: TelemetryRange): Promise<TelemetryResponse> {
+export async function fetchTelemetry(
+  feature: AtlasPointFeature,
+  metric: string,
+  range: TelemetryRange,
+): Promise<TelemetryResponse> {
   const url = telemetryUrl(feature, metric, range)
   const key = `${feature.properties.provider}:${feature.properties.id}:${metric}:${range}`
   if (!cache.has(key)) {
-    const request = fetch(url).then(async (response) => {
-      return await readJsonResponse<TelemetryResponse>(response, 'Telemetry')
-    }).catch((error) => {
-      cache.delete(key)
-      throw error
-    })
+    const request = fetch(url)
+      .then(async (response) => {
+        return await readJsonResponse<TelemetryResponse>(response, 'Telemetry')
+      })
+      .catch((error) => {
+        cache.delete(key)
+        throw error
+      })
     cache.set(key, request)
   }
   return cache.get(key) as Promise<TelemetryResponse>
@@ -52,8 +60,10 @@ export async function fetchTelemetry(feature: AtlasPointFeature, metric: string,
 function telemetryUrl(feature: AtlasPointFeature, metric: string, range: TelemetryRange) {
   const assetId = encodeURIComponent(feature.properties.id)
   const params = new URLSearchParams({ metric, range })
-  if (feature.properties.provider === 'opw-water') return `/api/providers/opw/gauges/${assetId}/telemetry?${params}`
-  if (feature.properties.provider === 'dcc-sonitus') return `/api/providers/sonitus/monitors/${assetId}/telemetry?${params}`
+  if (feature.properties.provider === 'opw-water')
+    return `/api/providers/opw/gauges/${assetId}/telemetry?${params}`
+  if (feature.properties.provider === 'dcc-sonitus')
+    return `/api/providers/sonitus/monitors/${assetId}/telemetry?${params}`
   throw new Error('Provider does not expose historical telemetry')
 }
 

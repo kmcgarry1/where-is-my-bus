@@ -12,6 +12,7 @@ dist
 dist-ssr
 .atlasops-cache
 .atlasops-data
+.phase0/
 .env
 .env.*
 !.env.example

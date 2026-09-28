@@ -1,6 +1,19 @@
-import type { AtlasFeatureCollection, AtlasFeatureProperties, AtlasPointFeature, AtlasStatus } from '../../../src/data/atlas.types.ts'
-import type { MeasurementCondition, TelemetryMetric, TelemetryReading } from '../../../src/data/telemetry.types.ts'
-import { SONITUS_STALE_MS, ageInMs, toIsoFromDublinLocal } from '../../../src/data/providers/time.ts'
+import type {
+  AtlasFeatureCollection,
+  AtlasFeatureProperties,
+  AtlasPointFeature,
+  AtlasStatus,
+} from '../../../src/data/atlas.types.ts'
+import type {
+  MeasurementCondition,
+  TelemetryMetric,
+  TelemetryReading,
+} from '../../../src/data/telemetry.types.ts'
+import {
+  SONITUS_STALE_MS,
+  ageInMs,
+  toIsoFromDublinLocal,
+} from '../../../src/data/providers/time.ts'
 import type { SonitusMonitor } from './schemas.ts'
 
 const metricDefinitions: TelemetryMetric[] = [
@@ -26,7 +39,8 @@ export function adaptSonitusMonitors(monitors: SonitusMonitor[]): AtlasFeatureCo
       id: `dcc-sonitus:${monitor.code}`,
       provider: 'dcc-sonitus',
       providerName: 'Dublin City Council / Sonitus',
-      assetType: monitor.monitor_type.category === 'noise' ? 'noise-monitor' : 'air-quality-monitor',
+      assetType:
+        monitor.monitor_type.category === 'noise' ? 'noise-monitor' : 'air-quality-monitor',
       name: `${monitor.label} - ${monitor.location}`,
       status,
       observedAt,
@@ -46,12 +60,14 @@ export function adaptSonitusMonitors(monitors: SonitusMonitor[]): AtlasFeatureCo
       },
     }
 
-    return [{
-      type: 'Feature',
-      id: properties.id,
-      geometry: { type: 'Point', coordinates: [longitude, latitude] },
-      properties,
-    }]
+    return [
+      {
+        type: 'Feature',
+        id: properties.id,
+        geometry: { type: 'Point', coordinates: [longitude, latitude] },
+        properties,
+      },
+    ]
   })
 
   return { type: 'FeatureCollection', features }
@@ -76,26 +92,32 @@ export function latestTelemetryForMonitor(monitor: SonitusMonitor): TelemetryRea
   return source.flatMap(([metric, value]) => {
     const definition = metricDefinitions.find((item) => item.id === metric)
     if (!definition || typeof value !== 'number' || !Number.isFinite(value)) return []
-    return [{
-      assetId: `dcc-sonitus:${monitor.code}`,
-      metric,
-      value,
-      unit: definition.unit,
-      observedAt,
-      provider: 'dcc-sonitus',
-      quality: reading.status === 'red' ? 'suspect' : 'valid',
-      condition,
-    } satisfies TelemetryReading]
+    return [
+      {
+        assetId: `dcc-sonitus:${monitor.code}`,
+        metric,
+        value,
+        unit: definition.unit,
+        observedAt,
+        provider: 'dcc-sonitus',
+        quality: reading.status === 'red' ? 'suspect' : 'valid',
+        condition,
+      } satisfies TelemetryReading,
+    ]
   })
 }
 
 export function sonitusMetricsForCategory(category: 'noise' | 'air'): TelemetryMetric[] {
-  return metricDefinitions.filter((metric) => category === 'noise'
-    ? metric.id === 'noise-laeq'
-    : !metric.id.startsWith('noise-'))
+  return metricDefinitions.filter((metric) =>
+    category === 'noise' ? metric.id === 'noise-laeq' : !metric.id.startsWith('noise-'),
+  )
 }
 
-export function normaliseHistoricalReadings(assetId: string, metric: string, points: Array<[string, number | null]>): TelemetryReading[] {
+export function normaliseHistoricalReadings(
+  assetId: string,
+  metric: string,
+  points: Array<[string, number | null]>,
+): TelemetryReading[] {
   const definition = metricDefinitions.find((item) => item.id === metric)
   if (!definition) return []
 

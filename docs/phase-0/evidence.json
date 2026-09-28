@@ -1,0 +1,1393 @@
+{
+  "generatedAt": "2026-09-15T16:59:22.943Z",
+  "phase0Complete": false,
+  "pending": [
+    "weekday morning and midday three-observation series",
+    "alert endpoint capability and account-specific entitlement",
+    "participant interviews",
+    "cloud staging qualification",
+    "complete real-data parity for workflows exceeding the benchmark deadline"
+  ],
+  "environment": {
+    "commit": "853b1fe0d6e3dab8f74dd66018933ef3f85c54d4",
+    "workingTreeChanges": true,
+    "node": "v24.21.0",
+    "platform": "win32",
+    "arch": "x64",
+    "timezone": "Europe/Dublin",
+    "checkedAt": "2026-09-15T15:51:18.482Z",
+    "credentialConfigured": true,
+    "credentialEnvName": "NTA_API_KEY",
+    "baseUrl": {
+      "origin": "http://127.0.0.1:5174",
+      "path": "/",
+      "fingerprint": "2fcca26053ef"
+    },
+    "staticEndpoint": {
+      "origin": "https://www.transportforireland.ie",
+      "path": "/transitData/Data/GTFS_Realtime.zip",
+      "fingerprint": "591ef750f615"
+    },
+    "endpoints": {
+      "vehicles": {
+        "origin": "https://api.nationaltransport.ie",
+        "path": "/gtfsr/v2/Vehicles",
+        "fingerprint": "c2782b473020"
+      },
+      "tripUpdates": {
+        "origin": "https://api.nationaltransport.ie",
+        "path": "/gtfsr/v2/TripUpdates",
+        "fingerprint": "cb03b01043ff"
+      },
+      "alerts": {
+        "origin": "https://api.nationaltransport.ie",
+        "path": "/gtfsr/v2/gtfsr",
+        "fingerprint": "807f7de5ab32"
+      }
+    }
+  },
+  "static": {
+    "status": "ok",
+    "source": "recommended",
+    "sha256": "6f38ac3cde0617a4237064e0a2b0e6373d077f45b11f767b6383412a28cde1e3",
+    "bytes": 101667086,
+    "downloadMs": 4788.3732,
+    "preparationMs": 86200.5836,
+    "counts": {
+      "routes": 403,
+      "trips": 176474,
+      "stops": 10184,
+      "stopTimes": 6650174,
+      "calendars": 125,
+      "calendarExceptions": 195
+    }
+  },
+  "sampling": {
+    "requestedWindow": "exploratory",
+    "required": 1,
+    "completed": 1
+  },
+  "feeds": {
+    "vehicles": {
+      "endpoint": {
+        "origin": "https://api.nationaltransport.ie",
+        "path": "/gtfsr/v2/Vehicles",
+        "fingerprint": "c2782b473020"
+      },
+      "startedAt": "2026-09-15T15:52:49.481Z",
+      "source": "live",
+      "httpStatus": 200,
+      "status": "ok",
+      "entityCount": 1411,
+      "feedTimestamp": 1789487569,
+      "durationMs": 145.13910000000033,
+      "matchingEntityCount": 1411
+    },
+    "tripUpdates": {
+      "endpoint": {
+        "origin": "https://api.nationaltransport.ie",
+        "path": "/gtfsr/v2/TripUpdates",
+        "fingerprint": "cb03b01043ff"
+      },
+      "startedAt": "2026-09-15T15:53:50.489Z",
+      "source": "live",
+      "httpStatus": 200,
+      "status": "ok",
+      "entityCount": 3489,
+      "feedTimestamp": 1789487622,
+      "durationMs": 245.98420000000624,
+      "matchingEntityCount": 3489
+    },
+    "alerts": {
+      "endpoint": {
+        "origin": "https://api.nationaltransport.ie",
+        "path": "/gtfsr/v2/gtfsr",
+        "fingerprint": "807f7de5ab32"
+      },
+      "startedAt": "2026-09-15T15:54:51.501Z",
+      "source": "live",
+      "httpStatus": 200,
+      "status": "empty",
+      "entityCount": 3497,
+      "feedTimestamp": 1789487689,
+      "durationMs": 804.6689000000188,
+      "matchingEntityCount": 0,
+      "capability": "alert-capability-unverified: no alert entities in this response"
+    }
+  },
+  "coverage": {
+    "window": {
+      "date": "2026-09-15",
+      "localTime": "16:52",
+      "timezone": "Europe/Dublin",
+      "window": "outside-planned-window"
+    },
+    "ageReference": "request-start timestamp of each corresponding feed",
+    "semantics": {
+      "tripUpdates": 3489,
+      "multiStopUpdates": 2549,
+      "cancelledTrips": 81,
+      "skippedStopUpdates": 1432,
+      "datedTripUpdates": 3489,
+      "unmatchedVehicleInstances": 2134,
+      "alertCount": 0,
+      "note": "Instance join uses tripId/startDate/startTime exactly; descriptor omissions can produce unmatched records. This is not proof GPS is absent."
+    },
+    "cities": [
+      {
+        "city": "dublin",
+        "status": "sampled",
+        "staticBusStops": 3803,
+        "vehicles": {
+          "vehicleCount": 860,
+          "timestampAgeSeconds": {
+            "count": 860,
+            "min": 6.480999946594238,
+            "p50": 20.48099994659424,
+            "p95": 146.48099994659424,
+            "max": 980.4809999465942
+          },
+          "missingTimestampCount": 0,
+          "staticTripMatchPercent": 99.88372093023256
+        },
+        "unknownStaticRouteVehicles": 0,
+        "tripUpdates": 2093,
+        "operators": [
+          {
+            "operator": "Go-Ahead Ireland",
+            "vehicles": {
+              "vehicleCount": 110,
+              "timestampAgeSeconds": {
+                "count": 110,
+                "min": 10.480999946594238,
+                "p50": 16.48099994659424,
+                "p95": 30.48099994659424,
+                "max": 872.4809999465942
+              },
+              "missingTimestampCount": 0,
+              "staticTripMatchPercent": 100
+            },
+            "tripUpdates": 351,
+            "updatesWithoutExactVehicleInstance": 209
+          },
+          {
+            "operator": "Bus Átha Cliath – Dublin Bus",
+            "vehicles": {
+              "vehicleCount": 704,
+              "timestampAgeSeconds": {
+                "count": 704,
+                "min": 6.480999946594238,
+                "p50": 20.48099994659424,
+                "p95": 88.48099994659424,
+                "max": 980.4809999465942
+              },
+              "missingTimestampCount": 0,
+              "staticTripMatchPercent": 99.85795454545455
+            },
+            "tripUpdates": 1582,
+            "updatesWithoutExactVehicleInstance": 814
+          },
+          {
+            "operator": "Bus Éireann",
+            "vehicles": {
+              "vehicleCount": 46,
+              "timestampAgeSeconds": {
+                "count": 46,
+                "min": 25.48099994659424,
+                "p50": 31.48099994659424,
+                "p95": 571.4809999465942,
+                "max": 620.4809999465942
+              },
+              "missingTimestampCount": 0,
+              "staticTripMatchPercent": 100
+            },
+            "tripUpdates": 160,
+            "updatesWithoutExactVehicleInstance": 74
+          }
+        ],
+        "stops": [
+          {
+            "stopId": "8220DB002810",
+            "scheduledTripsOnSampleDate": 260,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 10,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": false
+          },
+          {
+            "stopId": "8250DB003548",
+            "scheduledTripsOnSampleDate": 2,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 0,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": true
+          },
+          {
+            "stopId": "8220DB000279",
+            "scheduledTripsOnSampleDate": 295,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 3,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": false
+          },
+          {
+            "stopId": "8220DB000270",
+            "scheduledTripsOnSampleDate": 402,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 7,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": false
+          }
+        ]
+      },
+      {
+        "city": "cork",
+        "status": "sampled",
+        "staticBusStops": 815,
+        "vehicles": {
+          "vehicleCount": 91,
+          "timestampAgeSeconds": {
+            "count": 91,
+            "min": 25.48099994659424,
+            "p50": 29.48099994659424,
+            "p95": 276.48099994659424,
+            "max": 865.4809999465942
+          },
+          "missingTimestampCount": 0,
+          "staticTripMatchPercent": 100
+        },
+        "unknownStaticRouteVehicles": 0,
+        "tripUpdates": 339,
+        "operators": [
+          {
+            "operator": "Bus Éireann",
+            "vehicles": {
+              "vehicleCount": 91,
+              "timestampAgeSeconds": {
+                "count": 91,
+                "min": 25.48099994659424,
+                "p50": 29.48099994659424,
+                "p95": 276.48099994659424,
+                "max": 865.4809999465942
+              },
+              "missingTimestampCount": 0,
+              "staticTripMatchPercent": 100
+            },
+            "tripUpdates": 339,
+            "updatesWithoutExactVehicleInstance": 220
+          }
+        ],
+        "stops": [
+          {
+            "stopId": "8370B2550201",
+            "scheduledTripsOnSampleDate": 299,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 30,
+            "usableLiveEvidence": 1,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": false
+          },
+          {
+            "stopId": "8380B245541",
+            "scheduledTripsOnSampleDate": 19,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 0,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": true
+          },
+          {
+            "stopId": "8370B2406901",
+            "scheduledTripsOnSampleDate": 293,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 6,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": false
+          },
+          {
+            "stopId": "8370B2405001",
+            "scheduledTripsOnSampleDate": 396,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 13,
+            "usableLiveEvidence": 1,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": false
+          }
+        ]
+      },
+      {
+        "city": "galway",
+        "status": "sampled",
+        "staticBusStops": 291,
+        "vehicles": {
+          "vehicleCount": 43,
+          "timestampAgeSeconds": {
+            "count": 43,
+            "min": 25.48099994659424,
+            "p50": 29.48099994659424,
+            "p95": 38.48099994659424,
+            "max": 348.48099994659424
+          },
+          "missingTimestampCount": 0,
+          "staticTripMatchPercent": 100
+        },
+        "unknownStaticRouteVehicles": 0,
+        "tripUpdates": 162,
+        "operators": [
+          {
+            "operator": "Bus Éireann",
+            "vehicles": {
+              "vehicleCount": 43,
+              "timestampAgeSeconds": {
+                "count": 43,
+                "min": 25.48099994659424,
+                "p50": 29.48099994659424,
+                "p95": 38.48099994659424,
+                "max": 348.48099994659424
+              },
+              "missingTimestampCount": 0,
+              "staticTripMatchPercent": 100
+            },
+            "tripUpdates": 162,
+            "updatesWithoutExactVehicleInstance": 99
+          }
+        ],
+        "stops": [
+          {
+            "stopId": "8460B5550401",
+            "scheduledTripsOnSampleDate": 143,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 15,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": false
+          },
+          {
+            "stopId": "8470B531651",
+            "scheduledTripsOnSampleDate": 8,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 0,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": true
+          },
+          {
+            "stopId": "8460B522331",
+            "scheduledTripsOnSampleDate": 54,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 7,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": false
+          },
+          {
+            "stopId": "8460B523201",
+            "scheduledTripsOnSampleDate": 54,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 3,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": false
+          }
+        ]
+      },
+      {
+        "city": "limerick",
+        "status": "sampled",
+        "staticBusStops": 346,
+        "vehicles": {
+          "vehicleCount": 53,
+          "timestampAgeSeconds": {
+            "count": 53,
+            "min": 25.48099994659424,
+            "p50": 29.48099994659424,
+            "p95": 237.48099994659424,
+            "max": 506.48099994659424
+          },
+          "missingTimestampCount": 0,
+          "staticTripMatchPercent": 100
+        },
+        "unknownStaticRouteVehicles": 0,
+        "tripUpdates": 183,
+        "operators": [
+          {
+            "operator": "Bus Éireann",
+            "vehicles": {
+              "vehicleCount": 53,
+              "timestampAgeSeconds": {
+                "count": 53,
+                "min": 25.48099994659424,
+                "p50": 29.48099994659424,
+                "p95": 237.48099994659424,
+                "max": 506.48099994659424
+              },
+              "missingTimestampCount": 0,
+              "staticTripMatchPercent": 100
+            },
+            "tripUpdates": 183,
+            "updatesWithoutExactVehicleInstance": 109
+          }
+        ],
+        "stops": [
+          {
+            "stopId": "8400B635041",
+            "scheduledTripsOnSampleDate": 156,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 31,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": false
+          },
+          {
+            "stopId": "8410B3329401",
+            "scheduledTripsOnSampleDate": 6,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 0,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": true
+          },
+          {
+            "stopId": "8400B6078301",
+            "scheduledTripsOnSampleDate": 102,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 9,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": false
+          },
+          {
+            "stopId": "8400B610031",
+            "scheduledTripsOnSampleDate": 98,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 6,
+            "usableLiveEvidence": 1,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": false
+          }
+        ]
+      },
+      {
+        "city": "waterford",
+        "status": "sampled",
+        "staticBusStops": 145,
+        "vehicles": {
+          "vehicleCount": 22,
+          "timestampAgeSeconds": {
+            "count": 22,
+            "min": 3.4809999465942383,
+            "p50": 9.480999946594238,
+            "p95": 47.48099994659424,
+            "max": 438.48099994659424
+          },
+          "missingTimestampCount": 0,
+          "staticTripMatchPercent": 100
+        },
+        "unknownStaticRouteVehicles": 0,
+        "tripUpdates": 91,
+        "operators": [
+          {
+            "operator": "Bus Éireann",
+            "vehicles": {
+              "vehicleCount": 9,
+              "timestampAgeSeconds": {
+                "count": 9,
+                "min": 25.48099994659424,
+                "p50": 30.48099994659424,
+                "p95": 438.48099994659424,
+                "max": 438.48099994659424
+              },
+              "missingTimestampCount": 0,
+              "staticTripMatchPercent": 100
+            },
+            "tripUpdates": 50,
+            "updatesWithoutExactVehicleInstance": 28
+          },
+          {
+            "operator": "Bus Éireann Waterford",
+            "vehicles": {
+              "vehicleCount": 13,
+              "timestampAgeSeconds": {
+                "count": 13,
+                "min": 3.4809999465942383,
+                "p50": 4.480999946594238,
+                "p95": 33.48099994659424,
+                "max": 33.48099994659424
+              },
+              "missingTimestampCount": 0,
+              "staticTripMatchPercent": 100
+            },
+            "tripUpdates": 41,
+            "updatesWithoutExactVehicleInstance": 28
+          }
+        ],
+        "stops": [
+          {
+            "stopId": "8440B352051",
+            "scheduledTripsOnSampleDate": 215,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 9,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": false
+          },
+          {
+            "stopId": "8450B255601",
+            "scheduledTripsOnSampleDate": 11,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 0,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": true
+          },
+          {
+            "stopId": "8440B352541",
+            "scheduledTripsOnSampleDate": 211,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 11,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": false
+          },
+          {
+            "stopId": "8440B352271",
+            "scheduledTripsOnSampleDate": 81,
+            "calendarUnknownTrips": 0,
+            "matchingStopUpdates": 4,
+            "usableLiveEvidence": 0,
+            "usableEvidenceDefinition": "Conservative: explicit event time in next hour, matching explicit service date, update age <=300s and >=-120s, not cancelled/skipped/no-data. Delay-only or undated updates excluded; not proof of no service.",
+            "scheduledButNoMatchingUpdates": false
+          }
+        ]
+      }
+    ]
+  },
+  "selectedStops": [
+    {
+      "city": "dublin",
+      "busStopCount": 3803,
+      "selectionStatus": "four-candidates-selected",
+      "rationale": "Central: most routes within 1.2 km of city centre. Outer: farthest in bounds. Pair: within 250 m with opposite single direction IDs on a shared route. Geographic/interchange suitability requires human review.",
+      "stops": [
+        {
+          "id": "8220DB002810",
+          "name": "Clare Street",
+          "role": "central-interchange-candidate",
+          "routes": [
+            "03C 126E e a",
+            "03C 126U e a",
+            "03C 126X e a",
+            "03C 130 e a",
+            "03C 120A e a",
+            "03C 120E e a",
+            "03C 120F e a",
+            "1 39X c a",
+            "1 41X c a",
+            "1 44 c a",
+            "1 44D a",
+            "1 51D c a",
+            "1 77X c a",
+            "1 82 a",
+            "1 X1 a",
+            "1 X2 a",
+            "1 X25 c",
+            "1 X26 c",
+            "1 X27 d",
+            "1 X28 d",
+            "1 X30 d",
+            "1 X31 c",
+            "1 X32 c",
+            "1 142 e a",
+            "1 15A c a",
+            "1 15B c a",
+            "1 15D c a",
+            "1 32X c a",
+            "1 33X c a"
+          ],
+          "routeNames": [
+            "126E",
+            "126U",
+            "126X",
+            "130",
+            "120A",
+            "120E",
+            "120F",
+            "39X",
+            "41X",
+            "44",
+            "44D",
+            "51D",
+            "77X",
+            "82",
+            "X1",
+            "X2",
+            "X25",
+            "X26",
+            "X27",
+            "X28",
+            "X30",
+            "X31",
+            "X32",
+            "142",
+            "15A",
+            "15B",
+            "15D",
+            "32X",
+            "33X"
+          ]
+        },
+        {
+          "id": "8250DB003548",
+          "name": "Shanganagh Cliffs",
+          "role": "outer-area",
+          "routes": [
+            "3 45B d a"
+          ],
+          "routeNames": [
+            "45B"
+          ]
+        },
+        {
+          "id": "8220DB000279",
+          "name": "O'Connell St Upr",
+          "role": "opposite-direction-1",
+          "routes": [
+            "1 120 c a",
+            "1 122 c a",
+            "1 F1 a",
+            "1 F2 a",
+            "1 F3 a"
+          ],
+          "routeNames": [
+            "120",
+            "122",
+            "F1",
+            "F2",
+            "F3"
+          ]
+        },
+        {
+          "id": "8220DB000270",
+          "name": "O'Connell St Upr",
+          "role": "opposite-direction-2",
+          "routes": [
+            "1 13 c a",
+            "1 F1 a",
+            "1 F2 a",
+            "1 F3 a",
+            "1 16 c a",
+            "1 16D c a"
+          ],
+          "routeNames": [
+            "13",
+            "F1",
+            "F2",
+            "F3",
+            "16",
+            "16D"
+          ]
+        }
+      ]
+    },
+    {
+      "city": "cork",
+      "busStopCount": 815,
+      "selectionStatus": "four-candidates-selected",
+      "rationale": "Central: most routes within 1.2 km of city centre. Outer: farthest in bounds. Pair: within 250 m with opposite single direction IDs on a shared route. Geographic/interchange suitability requires human review.",
+      "stops": [
+        {
+          "id": "8370B2550201",
+          "name": "Cork Bus Stn",
+          "role": "central-interchange-candidate",
+          "routes": [
+            "2 40 d",
+            "2 233 c a",
+            "2 235 c a",
+            "2 236 c c",
+            "2 237 c b",
+            "2 239 c a",
+            "2 240 c a",
+            "2 241 c b",
+            "2 243 c a",
+            "2 245 c a",
+            "2 245X d",
+            "2 248 c a",
+            "2 260 c b",
+            "2 261 c a",
+            "2 31 a",
+            "2 51 c b",
+            "2 519 a"
+          ],
+          "routeNames": [
+            "40",
+            "233",
+            "235",
+            "236",
+            "237",
+            "239",
+            "240",
+            "241",
+            "243",
+            "245",
+            "245X",
+            "248",
+            "260",
+            "261",
+            "31",
+            "51",
+            "519"
+          ]
+        },
+        {
+          "id": "8380B245541",
+          "name": "Raheens East",
+          "role": "outer-area",
+          "routes": [
+            "2 223 c b"
+          ],
+          "routeNames": [
+            "223"
+          ]
+        },
+        {
+          "id": "8370B2406901",
+          "name": "Daunt's Square",
+          "role": "opposite-direction-1",
+          "routes": [
+            "2 203 c b",
+            "2 205 c a",
+            "2 207 c a",
+            "2 208 c a",
+            "2 214 c a"
+          ],
+          "routeNames": [
+            "203",
+            "205",
+            "207",
+            "208",
+            "214"
+          ]
+        },
+        {
+          "id": "8370B2405001",
+          "name": "Daunt's Square",
+          "role": "opposite-direction-2",
+          "routes": [
+            "2 203 c b",
+            "2 205 c a",
+            "2 207 c a",
+            "2 208 c a",
+            "2 209A c a",
+            "2 213 d",
+            "2 214 c a",
+            "2 215 c d"
+          ],
+          "routeNames": [
+            "203",
+            "205",
+            "207",
+            "208",
+            "209A",
+            "213",
+            "214",
+            "215"
+          ]
+        }
+      ]
+    },
+    {
+      "city": "galway",
+      "busStopCount": 291,
+      "selectionStatus": "four-candidates-selected",
+      "rationale": "Central: most routes within 1.2 km of city centre. Outer: farthest in bounds. Pair: within 250 m with opposite single direction IDs on a shared route. Geographic/interchange suitability requires human review.",
+      "stops": [
+        {
+          "id": "8460B5550401",
+          "name": "Galway Ceannt",
+          "role": "central-interchange-candidate",
+          "routes": [
+            "2 424 c a",
+            "2 350 c c",
+            "2 417 c a",
+            "2 419 c a",
+            "2 425 c a",
+            "2 425A c a",
+            "2 429 c c",
+            "2 434 c a",
+            "2 456 c a",
+            "2 51 c b",
+            "2 64 d a",
+            "2 65 d"
+          ],
+          "routeNames": [
+            "424",
+            "350",
+            "417",
+            "419",
+            "425",
+            "425A",
+            "429",
+            "434",
+            "456",
+            "51",
+            "64",
+            "65"
+          ]
+        },
+        {
+          "id": "8470B531651",
+          "name": "Ogúil",
+          "role": "outer-area",
+          "routes": [
+            "2 419 c a"
+          ],
+          "routeNames": [
+            "419"
+          ]
+        },
+        {
+          "id": "8460B522331",
+          "name": "Eyre Square",
+          "role": "opposite-direction-1",
+          "routes": [
+            "2 401 c a"
+          ],
+          "routeNames": [
+            "401"
+          ]
+        },
+        {
+          "id": "8460B523201",
+          "name": "Eyre Square",
+          "role": "opposite-direction-2",
+          "routes": [
+            "2 401 c a"
+          ],
+          "routeNames": [
+            "401"
+          ]
+        }
+      ]
+    },
+    {
+      "city": "limerick",
+      "busStopCount": 346,
+      "selectionStatus": "four-candidates-selected",
+      "rationale": "Central: most routes within 1.2 km of city centre. Outer: farthest in bounds. Pair: within 250 m with opposite single direction IDs on a shared route. Geographic/interchange suitability requires human review.",
+      "stops": [
+        {
+          "id": "8400B635041",
+          "name": "Limerick Colbert",
+          "role": "central-interchange-candidate",
+          "routes": [
+            "2 13 d",
+            "2 343 c b",
+            "2 14 d",
+            "2 314 e",
+            "2 317 a",
+            "2 317A a",
+            "2 320 d",
+            "2 321 c a",
+            "2 323 c a",
+            "2 323X c a",
+            "2 328 d",
+            "2 329 c c",
+            "2 330X a",
+            "2 332 d",
+            "2 345 c a",
+            "2 347 c a",
+            "2 51 c b",
+            "2 55 c a",
+            "2 72 c a"
+          ],
+          "routeNames": [
+            "13",
+            "343",
+            "14",
+            "314",
+            "317",
+            "317A",
+            "320",
+            "321",
+            "323",
+            "323X",
+            "328",
+            "329",
+            "330X",
+            "332",
+            "345",
+            "347",
+            "51",
+            "55",
+            "72"
+          ]
+        },
+        {
+          "id": "8410B3329401",
+          "name": "Ballyanrahan",
+          "role": "outer-area",
+          "routes": [
+            "2 320 d",
+            "2 321 c a"
+          ],
+          "routeNames": [
+            "320",
+            "321"
+          ]
+        },
+        {
+          "id": "8400B6078301",
+          "name": "Sarsfield St",
+          "role": "opposite-direction-1",
+          "routes": [
+            "2 304 c b",
+            "2 310"
+          ],
+          "routeNames": [
+            "304",
+            "310"
+          ]
+        },
+        {
+          "id": "8400B610031",
+          "name": "Sarsfield St",
+          "role": "opposite-direction-2",
+          "routes": [
+            "2 302 c a",
+            "2 306 c c",
+            "2 310"
+          ],
+          "routeNames": [
+            "302",
+            "306",
+            "310"
+          ]
+        }
+      ]
+    },
+    {
+      "city": "waterford",
+      "busStopCount": 145,
+      "selectionStatus": "four-candidates-selected",
+      "rationale": "Central: most routes within 1.2 km of city centre. Outer: farthest in bounds. Pair: within 250 m with opposite single direction IDs on a shared route. Geographic/interchange suitability requires human review.",
+      "stops": [
+        {
+          "id": "8440B352051",
+          "name": "Parnell Street",
+          "role": "central-interchange-candidate",
+          "routes": [
+            "WFRD W1 c c",
+            "WFRD W3 c c",
+            "WFRD W5 b c",
+            "2 354 a",
+            "2 355 d a",
+            "2 360 c a",
+            "2 360A c a",
+            "2 362 c a",
+            "2 370 c a",
+            "2 40 d"
+          ],
+          "routeNames": [
+            "W1",
+            "W3",
+            "W5",
+            "354",
+            "355",
+            "360",
+            "360A",
+            "362",
+            "370",
+            "40"
+          ]
+        },
+        {
+          "id": "8450B255601",
+          "name": "Ballinkina",
+          "role": "outer-area",
+          "routes": [
+            "2 354 a"
+          ],
+          "routeNames": [
+            "354"
+          ]
+        },
+        {
+          "id": "8440B352541",
+          "name": "Parnell Street",
+          "role": "opposite-direction-1",
+          "routes": [
+            "WFRD W3 c c",
+            "WFRD W5 b c",
+            "WFRD W2 c c",
+            "2 40 d",
+            "2 354 a",
+            "2 360 c a",
+            "2 360A c a",
+            "2 362 c a"
+          ],
+          "routeNames": [
+            "W3",
+            "W5",
+            "W2",
+            "40",
+            "354",
+            "360",
+            "360A",
+            "362"
+          ]
+        },
+        {
+          "id": "8440B352271",
+          "name": "John Street",
+          "role": "opposite-direction-2",
+          "routes": [
+            "WFRD W3 c c",
+            "WFRD W5 b c"
+          ],
+          "routeNames": [
+            "W3",
+            "W5"
+          ]
+        }
+      ]
+    }
+  ],
+  "benchmark": {
+    "environment": {
+      "commit": "853b1fe0d6e3dab8f74dd66018933ef3f85c54d4",
+      "workingTreeChanges": true,
+      "node": "v24.21.0",
+      "platform": "win32",
+      "arch": "x64",
+      "timezone": "Europe/Dublin",
+      "checkedAt": "2026-09-15T15:54:56.556Z",
+      "credentialConfigured": true,
+      "credentialEnvName": "NTA_API_KEY",
+      "baseUrl": {
+        "origin": "http://127.0.0.1:5174",
+        "path": "/",
+        "fingerprint": "2fcca26053ef"
+      },
+      "staticEndpoint": {
+        "origin": "https://www.transportforireland.ie",
+        "path": "/transitData/Data/GTFS_Realtime.zip",
+        "fingerprint": "591ef750f615"
+      },
+      "endpoints": {
+        "vehicles": {
+          "origin": "https://api.nationaltransport.ie",
+          "path": "/gtfsr/v2/Vehicles",
+          "fingerprint": "c2782b473020"
+        },
+        "tripUpdates": {
+          "origin": "https://api.nationaltransport.ie",
+          "path": "/gtfsr/v2/TripUpdates",
+          "fingerprint": "cb03b01043ff"
+        },
+        "alerts": {
+          "origin": "https://api.nationaltransport.ie",
+          "path": "/gtfsr/v2/gtfsr",
+          "fingerprint": "807f7de5ab32"
+        }
+      }
+    },
+    "archive": {
+      "sha256": "6f38ac3cde0617a4237064e0a2b0e6373d077f45b11f767b6383412a28cde1e3",
+      "bytes": 101667086,
+      "downloadMs": 4788.3732
+    },
+    "scope": "Local selected-stop snapshot experiment; not full national indexing or production arrival API",
+    "coldTrials": [
+      {
+        "mode": "baseline",
+        "incomplete": true,
+        "completedStops": 2,
+        "reads": 60,
+        "elapsedMs": 117434.90599999999,
+        "coldBoardMs": {
+          "count": 2,
+          "min": 40123.4534,
+          "p50": 40123.4534,
+          "p95": 40912.9408,
+          "max": 40912.9408
+        },
+        "warmMs": {
+          "count": 60,
+          "min": 0.4534999999887077,
+          "p50": 0.5038999999960652,
+          "p95": 0.6661999999923864,
+          "max": 1.7426000000123167
+        },
+        "maxRssKiB": 1981760,
+        "timedOut": true,
+        "deadlineMs": 120000,
+        "processWallMs": 120122.3798,
+        "failed": true
+      },
+      {
+        "mode": "baseline",
+        "incomplete": true,
+        "completedStops": 2,
+        "reads": 60,
+        "elapsedMs": 116991.214,
+        "coldBoardMs": {
+          "count": 2,
+          "min": 39697.0414,
+          "p50": 39697.0414,
+          "p95": 41070.20659999999,
+          "max": 41070.20659999999
+        },
+        "warmMs": {
+          "count": 60,
+          "min": 0.4547000000020489,
+          "p50": 0.5056999999942491,
+          "p95": 0.7112000000051921,
+          "max": 1.6312999999936437
+        },
+        "maxRssKiB": 1980912,
+        "timedOut": true,
+        "deadlineMs": 120000,
+        "processWallMs": 120115.89279999997,
+        "failed": true
+      },
+      {
+        "mode": "baseline",
+        "incomplete": true,
+        "completedStops": 2,
+        "reads": 60,
+        "elapsedMs": 116246.764,
+        "coldBoardMs": {
+          "count": 2,
+          "min": 39176.6394,
+          "p50": 39176.6394,
+          "p95": 40732.040100000006,
+          "max": 40732.040100000006
+        },
+        "warmMs": {
+          "count": 60,
+          "min": 0.4434000000037486,
+          "p50": 0.49410000001080334,
+          "p95": 0.6573000000062166,
+          "max": 1.3478999999933876
+        },
+        "maxRssKiB": 1945672,
+        "timedOut": true,
+        "deadlineMs": 120000,
+        "processWallMs": 120123.42979999993,
+        "failed": true
+      }
+    ],
+    "preparation": {
+      "mode": "bulk",
+      "elapsedMs": 129595.1682,
+      "maxRssKiB": 1063480,
+      "boardIds": [
+        "8220DB002810",
+        "8250DB003548",
+        "8220DB000279",
+        "8220DB000270",
+        "8370B2550201",
+        "8380B245541",
+        "8370B2406901",
+        "8370B2405001",
+        "8460B5550401",
+        "8470B531651",
+        "8460B522331",
+        "8460B523201",
+        "8400B635041",
+        "8410B3329401",
+        "8400B6078301",
+        "8400B610031",
+        "8440B352051",
+        "8450B255601",
+        "8440B352541",
+        "8440B352271"
+      ],
+      "payloadSha256": "24d4e05f8a8e19f432d3542a8044c9229029e06edb9dda11f98893d53ebe5735",
+      "timedOut": false,
+      "deadlineMs": 600000,
+      "processWallMs": 129851.04060000001,
+      "failed": false
+    },
+    "preparedBytes": 2274901,
+    "readers": [
+      {
+        "mode": "prepared",
+        "loadedMs": 26.268099999999976,
+        "reads": 600,
+        "warmMs": {
+          "count": 600,
+          "min": 0.12340000000000373,
+          "p50": 0.27909999999997126,
+          "p95": 1.7806999999999675,
+          "max": 2.991800000000012
+        },
+        "maxRssKiB": 104028,
+        "boardIds": [
+          "8220DB002810",
+          "8250DB003548",
+          "8220DB000279",
+          "8220DB000270",
+          "8370B2550201",
+          "8380B245541",
+          "8370B2406901",
+          "8370B2405001",
+          "8460B5550401",
+          "8470B531651",
+          "8460B522331",
+          "8460B523201",
+          "8400B635041",
+          "8410B3329401",
+          "8400B6078301",
+          "8400B610031",
+          "8440B352051",
+          "8450B255601",
+          "8440B352541",
+          "8440B352271"
+        ],
+        "payloadSha256": "24d4e05f8a8e19f432d3542a8044c9229029e06edb9dda11f98893d53ebe5735",
+        "timedOut": false,
+        "deadlineMs": 600000,
+        "processWallMs": 520.3802000000142,
+        "failed": false
+      },
+      {
+        "mode": "prepared",
+        "loadedMs": 26.2945,
+        "reads": 600,
+        "warmMs": {
+          "count": 600,
+          "min": 0.12299999999999045,
+          "p50": 0.2743000000000393,
+          "p95": 1.893700000000024,
+          "max": 2.9266000000000076
+        },
+        "maxRssKiB": 103680,
+        "boardIds": [
+          "8220DB002810",
+          "8250DB003548",
+          "8220DB000279",
+          "8220DB000270",
+          "8370B2550201",
+          "8380B245541",
+          "8370B2406901",
+          "8370B2405001",
+          "8460B5550401",
+          "8470B531651",
+          "8460B522331",
+          "8460B523201",
+          "8400B635041",
+          "8410B3329401",
+          "8400B6078301",
+          "8400B610031",
+          "8440B352051",
+          "8450B255601",
+          "8440B352541",
+          "8440B352271"
+        ],
+        "payloadSha256": "24d4e05f8a8e19f432d3542a8044c9229029e06edb9dda11f98893d53ebe5735",
+        "timedOut": false,
+        "deadlineMs": 600000,
+        "processWallMs": 506.37959999998566,
+        "failed": false
+      }
+    ],
+    "restart": {
+      "mode": "prepared",
+      "loadedMs": 18.96629999999999,
+      "reads": 600,
+      "warmMs": {
+        "count": 600,
+        "min": 0.12219999999996389,
+        "p50": 0.2676999999999907,
+        "p95": 1.7251999999999725,
+        "max": 2.741800000000012
+      },
+      "maxRssKiB": 103220,
+      "boardIds": [
+        "8220DB002810",
+        "8250DB003548",
+        "8220DB000279",
+        "8220DB000270",
+        "8370B2550201",
+        "8380B245541",
+        "8370B2406901",
+        "8370B2405001",
+        "8460B5550401",
+        "8470B531651",
+        "8460B522331",
+        "8460B523201",
+        "8400B635041",
+        "8410B3329401",
+        "8400B6078301",
+        "8400B610031",
+        "8440B352051",
+        "8450B255601",
+        "8440B352541",
+        "8440B352271"
+      ],
+      "payloadSha256": "24d4e05f8a8e19f432d3542a8044c9229029e06edb9dda11f98893d53ebe5735",
+      "timedOut": false,
+      "deadlineMs": 600000,
+      "processWallMs": 488.48689999990165,
+      "failed": false
+    },
+    "invalidReplacement": {
+      "rejected": true,
+      "previousUnchanged": true
+    },
+    "failedRefresh": {
+      "rejected": true,
+      "previousUnchanged": true
+    },
+    "afterFailedRefresh": {
+      "mode": "prepared",
+      "loadedMs": 19.086599999999976,
+      "reads": 600,
+      "warmMs": {
+        "count": 600,
+        "min": 0.12340000000000373,
+        "p50": 0.2687999999999988,
+        "p95": 1.8147000000000162,
+        "max": 2.881500000000017
+      },
+      "maxRssKiB": 103020,
+      "boardIds": [
+        "8220DB002810",
+        "8250DB003548",
+        "8220DB000279",
+        "8220DB000270",
+        "8370B2550201",
+        "8380B245541",
+        "8370B2406901",
+        "8370B2405001",
+        "8460B5550401",
+        "8470B531651",
+        "8460B522331",
+        "8460B523201",
+        "8400B635041",
+        "8410B3329401",
+        "8400B6078301",
+        "8400B610031",
+        "8440B352051",
+        "8450B255601",
+        "8440B352541",
+        "8440B352271"
+      ],
+      "payloadSha256": "24d4e05f8a8e19f432d3542a8044c9229029e06edb9dda11f98893d53ebe5735",
+      "timedOut": false,
+      "deadlineMs": 600000,
+      "processWallMs": 487.3752000000095,
+      "failed": false
+    },
+    "preparedPassed": true,
+    "currentLoaderMeetsBudget": false,
+    "experimentCompleted": true,
+    "passed": false
+  }
+}

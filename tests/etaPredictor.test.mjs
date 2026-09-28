@@ -7,10 +7,18 @@ test('stop colors retain only explicit trip direction IDs and destination labels
   for (const directionId of ['0', '1', undefined, 'invalid']) {
     const context = tripContext()
     context.trip = { ...context.trip, directionId, headsign: 'City centre' }
-    const prediction = predictNextStopArrival({ vehicle: vehicleAt(-6, 0.0108, { speed: 5, observedAt: now }), tripContext: context, recentPositions: [], now })
+    const prediction = predictNextStopArrival({
+      vehicle: vehicleAt(-6, 0.0108, { speed: 5, observedAt: now }),
+      tripContext: context,
+      recentPositions: [],
+      now,
+    })
     assert.ok(prediction.routeStops.features.length)
     for (const stop of prediction.routeStops.features) {
-      assert.equal(stop.properties.directionId, ['0', '1'].includes(directionId) ? directionId : undefined)
+      assert.equal(
+        stop.properties.directionId,
+        ['0', '1'].includes(directionId) ? directionId : undefined,
+      )
       assert.equal(stop.properties.directionLabel, 'To City centre')
     }
   }
@@ -21,8 +29,8 @@ test('normal movement predicts the next sequenced stop from route progress', () 
     vehicle: vehicleAt(-6, 0.0108, { speed: 5, observedAt: now }),
     tripContext: tripContext(),
     recentPositions: [
-      observation(-6, 0.0090, -60),
-      observation(-6, 0.0100, -30),
+      observation(-6, 0.009, -60),
+      observation(-6, 0.01, -30),
       observation(-6, 0.0108, 0),
     ],
     now,
@@ -41,8 +49,8 @@ test('temporarily stationary vehicles still receive a finite ETA from recent pro
     vehicle: vehicleAt(-6, 0.0108, { speed: 0, observedAt: now }),
     tripContext: tripContext(),
     recentPositions: [
-      observation(-6, 0.0090, -60),
-      observation(-6, 0.0100, -30),
+      observation(-6, 0.009, -60),
+      observation(-6, 0.01, -30),
       observation(-6, 0.0108, 0),
     ],
     now,
@@ -107,7 +115,11 @@ test('route loops use sequenced progress instead of nearest geographic stop', ()
 
 test('missing shape falls back to schedule or provider timing with low confidence', () => {
   const prediction = predictNextStopArrival({
-    vehicle: vehicleAt(-6, 0.0108, { observedAt: now, nextStopId: 'stop-b', scheduleDeviationSeconds: 120 }),
+    vehicle: vehicleAt(-6, 0.0108, {
+      observedAt: now,
+      nextStopId: 'stop-b',
+      scheduleDeviationSeconds: 120,
+    }),
     tripContext: tripContext({ shape: [] }),
     recentPositions: [],
     now,
@@ -137,9 +149,9 @@ test('GPS outliers do not dominate recent progression speed', () => {
     vehicle: vehicleAt(-6, 0.0108, { speed: 0, observedAt: now }),
     tripContext: tripContext(),
     recentPositions: [
-      observation(-6, 0.0090, -90),
+      observation(-6, 0.009, -90),
       observation(-6.5, 0.5, -60),
-      observation(-6, 0.0100, -30),
+      observation(-6, 0.01, -30),
       observation(-6, 0.0108, 0),
     ],
     now,
@@ -156,8 +168,8 @@ test('target-stop prediction can estimate arrivals beyond the immediate next sto
     tripContext: tripContext(),
     targetStopId: 'stop-c',
     recentPositions: [
-      observation(-6, 0.0090, -60),
-      observation(-6, 0.0100, -30),
+      observation(-6, 0.009, -60),
+      observation(-6, 0.01, -30),
       observation(-6, 0.0108, 0),
     ],
     now,
@@ -188,7 +200,7 @@ function tripContext(overrides = {}) {
     route: { routeId: 'route-1', shortName: '220' },
     stops: [
       stop('stop-a', -6, 0.005, 60, 1),
-      stop('stop-b', -6, 0.020, 420, 2),
+      stop('stop-b', -6, 0.02, 420, 2),
       stop('stop-c', -6, 0.032, 720, 3),
     ],
     shape: [

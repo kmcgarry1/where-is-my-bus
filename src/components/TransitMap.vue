@@ -113,12 +113,7 @@ function requestStops() {
   emit(
     'bounds',
     showStops.value && bounds
-      ? [
-          bounds.getWest(),
-          bounds.getSouth(),
-          bounds.getEast(),
-          bounds.getNorth(),
-        ].join(',')
+      ? [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()].join(',')
       : undefined,
   )
 }
@@ -145,9 +140,7 @@ function updateDetails() {
   setData(
     'stops',
     props.selectedStop &&
-      !stops.features.some(
-        (stop) => stop.properties.id === props.selectedStop?.properties.id,
-      )
+      !stops.features.some((stop) => stop.properties.id === props.selectedStop?.properties.id)
       ? { ...stops, features: [...stops.features, props.selectedStop] }
       : stops,
   )
@@ -165,8 +158,7 @@ onMounted(async () => {
     if (token) renderer = (await import('mapbox-gl')).default
     else {
       const library = await import('maplibre-gl')
-      const worker =
-        await import('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url')
+      const worker = await import('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url')
       library.setWorkerUrl(worker.default)
       await import('maplibre-gl/dist/maplibre-gl.css')
       renderer = library as unknown as typeof mapboxgl
@@ -195,28 +187,20 @@ onMounted(async () => {
       zoom: 6,
       attributionControl: false,
     })
-    if (import.meta.env.DEV)
-      (window as Window & { __busTimeMap?: mapboxgl.Map }).__busTimeMap = map
+    if (import.meta.env.DEV) (window as Window & { __busTimeMap?: mapboxgl.Map }).__busTimeMap = map
     const locationElement = document.createElement('div')
     locationElement.className = 'user-location-pin'
     locationElement.setAttribute('role', 'img')
     locationElement.setAttribute('aria-label', 'Your location')
     locationElement.title = 'Your location'
     locationMarker = new renderer.Marker({ element: locationElement })
-    map.addControl(
-      new renderer.AttributionControl({ compact: true }),
-      'bottom-right',
-    )
-    map.addControl(
-      new renderer.NavigationControl({ showCompass: false }),
-      'bottom-right',
-    )
+    map.addControl(new renderer.AttributionControl({ compact: true }), 'bottom-right')
+    map.addControl(new renderer.NavigationControl({ showCompass: false }), 'bottom-right')
     map.on('moveend', () => {
       if (showStops.value) requestStops()
     })
     map.on('error', () => {
-      mapError.value =
-        'Some map tiles could not load. Bus details are still available.'
+      mapError.value = 'Some map tiles could not load. Bus details are still available.'
     })
     map.on('load', async () => {
       if (!map) return
@@ -233,8 +217,7 @@ onMounted(async () => {
     })
     observer.observe(container.value!)
   } catch {
-    mapError.value =
-      'The map is unavailable in this browser. Bus details are still available.'
+    mapError.value = 'The map is unavailable in this browser. Bus details are still available.'
   }
 })
 watch(
@@ -253,33 +236,18 @@ watch(
   },
 )
 watch(() => props.area, fitArea)
+watch(() => props.userLocation, updateLocation, { flush: 'post' })
 watch(
-  () => props.userLocation,
-  updateLocation,
-  { flush: 'post' },
-)
-watch(
-  () => [
-    props.eta,
-    props.stops,
-    props.selectedStop,
-    props.selectedVehicle,
-    props.trail,
-  ],
+  () => [props.eta, props.stops, props.selectedStop, props.selectedVehicle, props.trail],
   updateDetails,
 )
 watch(
-  () =>
-    props.selectedVehicle?.properties.id ?? props.selectedStop?.properties.id,
+  () => props.selectedVehicle?.properties.id ?? props.selectedStop?.properties.id,
   focusSelection,
 )
 watch(traffic, (show) => {
   if (map?.getLayer('traffic-lines'))
-    map.setLayoutProperty(
-      'traffic-lines',
-      'visibility',
-      show ? 'visible' : 'none',
-    )
+    map.setLayoutProperty('traffic-lines', 'visibility', show ? 'visible' : 'none')
 })
 watch(showStops, requestStops)
 watch(
@@ -323,7 +291,15 @@ async function setupMapLayersAndData() {
       source: 'stops',
       paint: {
         'circle-radius': 12,
-        'circle-color': ['match', ['get', 'directionId'], '0', '#b9ddff', '1', '#f4c0db', '#e3e6e8'],
+        'circle-color': [
+          'match',
+          ['get', 'directionId'],
+          '0',
+          '#b9ddff',
+          '1',
+          '#f4c0db',
+          '#e3e6e8',
+        ],
         'circle-stroke-color': '#555f60',
         'circle-stroke-width': 1.5,
       },
@@ -355,12 +331,7 @@ async function setupMapLayersAndData() {
       source: 'vehicles',
       paint: {
         'circle-radius': 15,
-        'circle-color': [
-          'case',
-          ['==', ['get', 'scheduleStatus'], 'late'],
-          '#f2c663',
-          '#69cfb2',
-        ],
+        'circle-color': ['case', ['==', ['get', 'scheduleStatus'], 'late'], '#f2c663', '#69cfb2'],
         'circle-stroke-color': '#ffffff',
         'circle-stroke-width': 2,
       },
@@ -412,9 +383,7 @@ async function setupMapLayersAndData() {
       map.on('click', layer, (event) => {
         const id = event.features?.[0]?.properties?.id
         if (layer === 'bus-bg') {
-          const bus = props.vehicles.features.find(
-            (item) => item.properties.id === id,
-          )
+          const bus = props.vehicles.features.find((item) => item.properties.id === id)
           if (bus) emit('vehicle', bus)
         } else {
           const stop = (props.eta?.routeStops ?? props.stops).features.find(
@@ -433,8 +402,7 @@ async function setupMapLayersAndData() {
     else if (!styleReady) fitArea()
     updateLocation()
   } catch {
-    mapError.value =
-      'Map symbols could not load. Bus details are still available.'
+    mapError.value = 'Map symbols could not load. Bus details are still available.'
   }
 }
 onUnmounted(() => {
@@ -458,7 +426,9 @@ onUnmounted(() => {
         title="Zoom to my location"
         aria-label="Zoom to my location"
         @click="focusLocation"
-      ><Navigation :size="20" /></button>
+      >
+        <Navigation :size="20" />
+      </button>
       <button
         class="icon-button"
         title="Fit selected area"
@@ -489,7 +459,10 @@ onUnmounted(() => {
     </div>
     <div class="map-key">
       <span><i class="key-bus" />Bus</span
-      ><span v-for="direction in stopDirections" :key="direction.id" :title="direction.label"><i :class="direction.id === '0' ? 'key-direction-zero' : 'key-direction-one'" />{{ direction.label }}</span
+      ><span v-for="direction in stopDirections" :key="direction.id" :title="direction.label"
+        ><i :class="direction.id === '0' ? 'key-direction-zero' : 'key-direction-one'" />{{
+          direction.label
+        }}</span
       ><span><i class="key-stop" />{{ stopDirections.length ? 'Other stops' : 'Stop' }}</span
       ><span><i class="key-late" />Late</span>
     </div>
